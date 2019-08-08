@@ -7,23 +7,7 @@ import "strconv"
 import "strings"
 import "unicode"
 
-type TokenKind int
-
-const (
-	tkReserved TokenKind = iota
-	tkNum
-	tkEOF
-)
-
-type Token struct {
-	kind TokenKind
-	next *Token
-	val  int
-	str  []rune
-}
-
 var userInput []rune
-var token *Token
 
 func fatal(format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, a...)
@@ -40,6 +24,23 @@ func fatalAt(loc []rune, format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
 }
+
+type TokenKind int
+
+const (
+	tkReserved TokenKind = iota
+	tkNum
+	tkEOF
+)
+
+type Token struct {
+	kind TokenKind
+	next *Token
+	val  int
+	str  []rune
+}
+
+var token *Token
 
 func consume(op rune) bool {
 	if token.kind == tkReserved && token.str[0] == op {
@@ -110,6 +111,22 @@ func tokenize(p []rune) *Token {
 	return head.next
 }
 
+func readNumber(program []rune) (int, []rune) {
+	length := 0
+	for length < len(program) && unicode.IsDigit(program[length]) {
+		length++
+	}
+
+	target := string(program[0:length])
+	remaining := program[length:]
+	number, err := strconv.Atoi(target)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return number, remaining
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Printf("usage: 9cc <program>\n")
@@ -140,20 +157,4 @@ func main() {
 	}
 
 	fmt.Printf("  ret\n")
-}
-
-func readNumber(program []rune) (int, []rune) {
-	length := 0
-	for length < len(program) && unicode.IsDigit(program[length]) {
-		length++
-	}
-
-	target := string(program[0:length])
-	remaining := program[length:]
-	number, err := strconv.Atoi(target)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return number, remaining
 }
