@@ -92,7 +92,8 @@ func tokenize(p []rune) *Token {
 			continue
 		}
 
-		if p[0] == '+' || p[0] == '-' {
+		switch p[0] {
+		case '+', '-', '*', '/':
 			cur = newToken(tkReserved, cur, p)
 			p = p[1:]
 			continue
@@ -132,6 +133,8 @@ type NodeKind int
 const (
 	ndAdd = iota
 	ndSub
+	ndMul
+	ndDiv
 	ndNum
 )
 
@@ -158,13 +161,27 @@ func newNodeNum(val int) *Node {
 }
 
 func expr() *Node {
-	node := newNodeNum(expectNumber())
+	node := mul()
 
 	for {
 		if consume('+') {
-			node = newNode(ndAdd, node, newNodeNum(expectNumber()))
+			node = newNode(ndAdd, node, mul())
 		} else if consume('-') {
-			node = newNode(ndSub, node, newNodeNum(expectNumber()))
+			node = newNode(ndSub, node, mul())
+		} else {
+			return node
+		}
+	}
+}
+
+func mul() *Node {
+	node := newNodeNum(expectNumber())
+
+	for {
+		if consume('*') {
+			node = newNode(ndMul, node, newNodeNum(expectNumber()))
+		} else if consume('/') {
+			node = newNode(ndDiv, node, newNodeNum(expectNumber()))
 		} else {
 			return node
 		}
@@ -188,6 +205,11 @@ func gen(node *Node) {
 		fmt.Printf("  add rax, rdi\n")
 	case ndSub:
 		fmt.Printf("  sub rax, rdi\n")
+	case ndMul:
+		fmt.Printf("  imul rax, rdi\n")
+	case ndDiv:
+		fmt.Printf("  cqo\n")
+		fmt.Printf("  idiv rdi\n")
 	}
 
 	fmt.Printf("  push rax\n")
