@@ -127,6 +127,72 @@ func readNumber(program []rune) (int, []rune) {
 	return number, remaining
 }
 
+type NodeKind int
+
+const (
+	ndAdd = iota
+	ndSub
+	ndNum
+)
+
+type Node struct {
+	kind NodeKind
+	lhs  *Node
+	rhs  *Node
+	val  int
+}
+
+func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
+	return &Node{
+		kind: kind,
+		lhs:  lhs,
+		rhs:  rhs,
+	}
+}
+
+func newNodeNum(val int) *Node {
+	return &Node{
+		kind: ndNum,
+		val:  val,
+	}
+}
+
+func expr() *Node {
+	node := newNodeNum(expectNumber())
+
+	for {
+		if consume('+') {
+			node = newNode(ndAdd, node, newNodeNum(expectNumber()))
+		} else if consume('-') {
+			node = newNode(ndSub, node, newNodeNum(expectNumber()))
+		} else {
+			return node
+		}
+	}
+}
+
+func gen(node *Node) {
+	if node.kind == ndNum {
+		fmt.Printf("  push %d\n", node.val)
+		return
+	}
+
+	gen(node.lhs)
+	gen(node.rhs)
+
+	fmt.Printf("  pop rdi\n")
+	fmt.Printf("  pop rax\n")
+
+	switch node.kind {
+	case ndAdd:
+		fmt.Printf("  add rax, rdi\n")
+	case ndSub:
+		fmt.Printf("  sub rax, rdi\n")
+	}
+
+	fmt.Printf("  push rax\n")
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Printf("usage: 9cc <program>\n")
@@ -135,26 +201,14 @@ func main() {
 
 	userInput = []rune(os.Args[1])
 	token = tokenize(userInput)
+	node := expr()
 
 	fmt.Printf(".intel_syntax noprefix\n")
 	fmt.Printf(".global main\n")
 	fmt.Printf("main:\n")
 
-	fmt.Printf("  mov rax, %d\n", expectNumber())
+	gen(node)
 
-	for !atEOF() {
-		if consume('+') {
-			fmt.Printf("  add rax, %d\n", expectNumber())
-			continue
-		}
-
-		if consume('-') {
-			fmt.Printf("  sub rax, %d\n", expectNumber())
-			continue
-		}
-
-		fatalAt(token.str, "Unexpected token")
-	}
-
+	fmt.Printf("  pop rax\n")
 	fmt.Printf("  ret\n")
 }
