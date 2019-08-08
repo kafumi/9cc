@@ -93,7 +93,7 @@ func tokenize(p []rune) *Token {
 		}
 
 		switch p[0] {
-		case '+', '-', '*', '/':
+		case '+', '-', '*', '/', '(', ')':
 			cur = newToken(tkReserved, cur, p)
 			p = p[1:]
 			continue
@@ -175,17 +175,27 @@ func expr() *Node {
 }
 
 func mul() *Node {
-	node := newNodeNum(expectNumber())
+	node := term()
 
 	for {
 		if consume('*') {
-			node = newNode(ndMul, node, newNodeNum(expectNumber()))
+			node = newNode(ndMul, node, term())
 		} else if consume('/') {
-			node = newNode(ndDiv, node, newNodeNum(expectNumber()))
+			node = newNode(ndDiv, node, term())
 		} else {
 			return node
 		}
 	}
+}
+
+func term() *Node {
+	if consume('(') {
+		node := expr()
+		expect(')')
+		return node
+	}
+
+	return newNodeNum(expectNumber())
 }
 
 func gen(node *Node) {
