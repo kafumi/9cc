@@ -4,6 +4,7 @@ import "fmt"
 import "log"
 import "os"
 import "strconv"
+import "strings"
 import "unicode"
 
 type TokenKind int
@@ -21,9 +22,20 @@ type Token struct {
 	str  []rune
 }
 
+var userInput []rune
 var token *Token
 
 func fatal(format string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, a...)
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func fatalAt(loc []rune, format string, a ...interface{}) {
+	pos := len(userInput) - len(loc)
+	fmt.Fprintf(os.Stderr, "%s\n", string(userInput))
+	fmt.Fprintf(os.Stderr, strings.Repeat(" ", pos))
+	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, a...)
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
@@ -41,13 +53,13 @@ func expect(op rune) {
 	if token.kind == tkReserved && token.str[0] == op {
 		token = token.next
 	} else {
-		fatal("Next character is not '%c'", op)
+		fatalAt(token.str, "Next character is not '%c'", op)
 	}
 }
 
 func expectNumber() int {
 	if token.kind != tkNum {
-		fatal("Next token is not number")
+		fatalAt(token.str, "Next token is not number")
 	}
 	val := token.val
 	token = token.next
@@ -91,7 +103,7 @@ func tokenize(p []rune) *Token {
 			continue
 		}
 
-		fatal("Unable to tokenize")
+		fatalAt(p, "Unable to tokenize")
 	}
 
 	newToken(tkEOF, cur, p)
@@ -104,8 +116,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	program := []rune(os.Args[1])
-	token = tokenize(program)
+	userInput = []rune(os.Args[1])
+	token = tokenize(userInput)
 
 	fmt.Printf(".intel_syntax noprefix\n")
 	fmt.Printf(".global main\n")
@@ -124,7 +136,7 @@ func main() {
 			continue
 		}
 
-		fatal("Unexpected token")
+		fatalAt(token.str, "Unexpected token")
 	}
 
 	fmt.Printf("  ret\n")
