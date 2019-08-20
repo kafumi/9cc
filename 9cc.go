@@ -98,6 +98,22 @@ func tokenize(p []rune) *Token {
 		}
 
 		switch p[0] {
+		case '=', '!':
+			if p[1] != '=' {
+				fatalAtStr(p[1:], "Next character is not '='")
+			}
+			cur = newToken(tkReserved, cur, p, 2)
+			p = p[2:]
+			continue
+		case '<', '>':
+			if p[1] == '=' {
+				cur = newToken(tkReserved, cur, p, 2)
+				p = p[2:]
+			} else {
+				cur = newToken(tkReserved, cur, p, 1)
+				p = p[1:]
+			}
+			continue
 		case '+', '-', '*', '/', '(', ')':
 			cur = newToken(tkReserved, cur, p, 1)
 			p = p[1:]
@@ -138,7 +154,11 @@ func readNumber(program []rune) (int, []rune) {
 type NodeKind int
 
 const (
-	ndAdd = iota
+	ndEq = iota
+	ndNe
+	ndLt
+	ndLe
+	ndAdd
 	ndSub
 	ndMul
 	ndDiv
@@ -168,6 +188,42 @@ func newNodeNum(val int) *Node {
 }
 
 func expr() *Node {
+	return equality()
+}
+
+func equality() *Node {
+	node := relational()
+
+	for {
+		if consume("==") {
+			node = newNode(ndEq, node, relational())
+		} else if consume("!=") {
+			node = newNode(ndNe, node, relational())
+		} else {
+			return node
+		}
+	}
+}
+
+func relational() *Node {
+	node := add()
+
+	for {
+		if consume("<") {
+			node = newNode(ndLt, node, add())
+		} else if consume("<=") {
+			node = newNode(ndLe, node, add())
+		} else if consume(">") {
+			node = newNode(ndLt, add(), node)
+		} else if consume(">=") {
+			node = newNode(ndLe, add(), node)
+		} else {
+			return node
+		}
+	}
+}
+
+func add() *Node {
 	node := mul()
 
 	for {
@@ -228,6 +284,8 @@ func gen(node *Node) {
 	fmt.Printf("  pop rax\n")
 
 	switch node.kind {
+	case ndEq, ndNe, ndLt, ndLe:
+		genCmp(node)
 	case ndAdd:
 		fmt.Printf("  add rax, rdi\n")
 	case ndSub:
@@ -240,6 +298,21 @@ func gen(node *Node) {
 	}
 
 	fmt.Printf("  push rax\n")
+}
+
+func genCmp(node *Node) {
+	fmt.Printf("  cmp rax, rdi\n")
+	switch node.kind {
+	case ndEq:
+		fmt.Printf("  sete al\n")
+	case ndNe:
+		fmt.Printf("  setne al\n")
+	case ndLt:
+		fmt.Printf("  setl al\n")
+	case ndLe:
+		fmt.Printf("  setle al\n")
+	}
+	fmt.Printf("  movzb rax, al\n")
 }
 
 func main() {
