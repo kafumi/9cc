@@ -1,10 +1,10 @@
 package main
 
 import "fmt"
-import "log"
 import "os"
 import "strconv"
 import "strings"
+import "reflect"
 import "unicode"
 
 var userInput []rune
@@ -15,14 +15,17 @@ func fatal(format string, a ...interface{}) {
 	os.Exit(1)
 }
 
-func fatalAt(loc []rune, format string, a ...interface{}) {
-	pos := len(userInput) - len(loc)
+func fatalAt(pos int, format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, "%s\n", string(userInput))
 	fmt.Fprintf(os.Stderr, strings.Repeat(" ", pos))
 	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, a...)
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
+}
+
+func fatalAtStr(loc []rune, format string, a ...interface{}) {
+	fatalAt(len(userInput)-len(loc), format, a...)
 }
 
 type TokenKind int
@@ -37,30 +40,31 @@ type Token struct {
 	kind TokenKind
 	next *Token
 	val  int
+	pos  int
 	str  []rune
 }
 
 var token *Token
 
-func consume(op rune) bool {
-	if token.kind == tkReserved && token.str[0] == op {
+func consume(op string) bool {
+	if token.kind == tkReserved && reflect.DeepEqual(token.str, []rune(op)) {
 		token = token.next
 		return true
 	}
 	return false
 }
 
-func expect(op rune) {
-	if token.kind == tkReserved && token.str[0] == op {
+func expect(op string) {
+	if token.kind == tkReserved && reflect.DeepEqual(token.str, []rune(op)) {
 		token = token.next
 	} else {
-		fatalAt(token.str, "Next character is not '%c'", op)
+		fatalAt(token.pos, "Next character is not '%s'", op)
 	}
 }
 
 func expectNumber() int {
 	if token.kind != tkNum {
-		fatalAt(token.str, "Next token is not number")
+		fatalAt(token.pos, "Next token is not number")
 	}
 	val := token.val
 	token = token.next
@@ -71,10 +75,11 @@ func atEOF() bool {
 	return token.kind == tkEOF
 }
 
-func newToken(kind TokenKind, cur *Token, str []rune) *Token {
+func newToken(kind TokenKind, cur *Token, str []rune, tokenLen int) *Token {
 	tok := &Token{
 		kind: kind,
-		str:  str,
+		pos:  len(userInput) - len(str),
+		str:  str[:tokenLen],
 	}
 	cur.next = tok
 	return tok
@@ -94,21 +99,23 @@ func tokenize(p []rune) *Token {
 
 		switch p[0] {
 		case '+', '-', '*', '/', '(', ')':
-			cur = newToken(tkReserved, cur, p)
+			cur = newToken(tkReserved, cur, p, 1)
 			p = p[1:]
 			continue
 		}
 
 		if unicode.IsDigit(p[0]) {
-			cur = newToken(tkNum, cur, p)
-			cur.val, p = readNumber(p)
+			val, newP := readNumber(p)
+			cur = newToken(tkNum, cur, p, len(p)-len(newP))
+			cur.val = val
+			p = newP
 			continue
 		}
 
-		fatalAt(p, "Unable to tokenize")
+		fatalAtStr(p, "Unable to tokenize")
 	}
 
-	newToken(tkEOF, cur, p)
+	newToken(tkEOF, cur, p, 0)
 	return head.next
 }
 
@@ -122,7 +129,7 @@ func readNumber(program []rune) (int, []rune) {
 	remaining := program[length:]
 	number, err := strconv.Atoi(target)
 	if err != nil {
-		log.Fatal(err)
+		fatalAtStr(program, "Expect number")
 	}
 
 	return number, remaining
@@ -164,9 +171,9 @@ func expr() *Node {
 	node := mul()
 
 	for {
-		if consume('+') {
+		if consume("+") {
 			node = newNode(ndAdd, node, mul())
-		} else if consume('-') {
+		} else if consume("-") {
 			node = newNode(ndSub, node, mul())
 		} else {
 			return node
@@ -178,9 +185,9 @@ func mul() *Node {
 	node := unary()
 
 	for {
-		if consume('*') {
+		if consume("*") {
 			node = newNode(ndMul, node, unary())
-		} else if consume('/') {
+		} else if consume("/") {
 			node = newNode(ndDiv, node, unary())
 		} else {
 			return node
@@ -189,19 +196,19 @@ func mul() *Node {
 }
 
 func unary() *Node {
-	if consume('+') {
+	if consume("+") {
 		return primary()
 	}
-	if consume('-') {
+	if consume("-") {
 		return newNode(ndSub, newNodeNum(0), primary())
 	}
 	return primary()
 }
 
 func primary() *Node {
-	if consume('(') {
+	if consume("(") {
 		node := expr()
-		expect(')')
+		expect(")")
 		return node
 	}
 
