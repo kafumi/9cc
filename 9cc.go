@@ -175,20 +175,20 @@ func expr() *Node {
 }
 
 func mul() *Node {
-	node := term()
+	node := primary()
 
 	for {
 		if consume('*') {
-			node = newNode(ndMul, node, term())
+			node = newNode(ndMul, node, primary())
 		} else if consume('/') {
-			node = newNode(ndDiv, node, term())
+			node = newNode(ndDiv, node, primary())
 		} else {
 			return node
 		}
 	}
 }
 
-func term() *Node {
+func primary() *Node {
 	if consume('(') {
 		node := expr()
 		expect(')')
