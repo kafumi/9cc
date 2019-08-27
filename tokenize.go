@@ -10,6 +10,7 @@ type TokenKind int
 
 const (
 	tkReserved TokenKind = iota // Symbol
+	tkReturn                    // "return"
 	tkIdent                     // Identifier
 	tkNum                       // Integer
 	tkEOF                       // End of input
@@ -33,11 +34,11 @@ func consume(op string) bool {
 	return false
 }
 
-func consumeIdent() *Token {
-	if token.kind == tkIdent {
-		ident := token
+func consumeKind(kind TokenKind) *Token {
+	if token.kind == kind {
+		consumed := token
 		token = token.next
-		return ident
+		return consumed
 	}
 	return nil
 }
@@ -118,6 +119,12 @@ func tokenize(p []rune) *Token {
 			continue
 		}
 
+		if isReservedWord(p, "return") {
+			cur = newToken(tkReturn, cur, p[:6], lenAll-len(p))
+			p = p[6:]
+			continue
+		}
+
 		if isTokenFirstChar(p[0]) {
 			name := readIdent(p)
 			cur = newToken(tkIdent, cur, name, lenAll-len(p))
@@ -138,6 +145,19 @@ func tokenize(p []rune) *Token {
 
 	newToken(tkEOF, cur, p, lenAll)
 	return head.next
+}
+
+func isReservedWord(p []rune, word string) bool {
+	runes := []rune(word)
+	length := len(runes)
+	if len(p) < length {
+		return false
+	}
+	prefix := p[:length]
+	if !reflect.DeepEqual(prefix, runes) {
+		return false
+	}
+	return len(p) == length || !isTokenChar(p[length])
 }
 
 func readIdent(p []rune) []rune {

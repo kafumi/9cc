@@ -21,6 +21,11 @@ func gen(node *Node) {
 		fmt.Printf("  mov [rax], rdi\n")
 		fmt.Printf("  push rdi\n")
 		return
+	case ndReturn:
+		gen(node.lhs)
+		fmt.Printf("  pop rax\n")
+		genEpilogue()
+		return
 	}
 
 	gen(node.lhs)

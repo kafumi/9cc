@@ -47,5 +47,7 @@ try 8 'c=4*2; c;'
 try 14 'a=3; b=5*6-8; a+b/2;'
 try 23 'foo=3; bar=4*5; foo=foo+bar; foo;'
 try 2 'a1=10; a2=20; a2/a1;'
+try 5 'return 5; return 8;'
+try 10 'return1=7; return1+3;'
 
 echo OK

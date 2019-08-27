@@ -61,6 +61,7 @@ const (
 	ndMul           // *
 	ndDiv           // /
 	ndAssign        // =
+	ndReturn        // "return"
 	ndLvar          // Local variable
 	ndNum           // Integer
 )
@@ -105,7 +106,12 @@ func program() []*Node {
 }
 
 func stmt() *Node {
-	node := expr()
+	var node *Node
+	if consumeKind(tkReturn) != nil {
+		node = newNode(ndReturn, expr(), nil)
+	} else {
+		node = expr()
+	}
 	expect(";")
 	return node
 }
@@ -200,7 +206,7 @@ func primary() *Node {
 		return node
 	}
 
-	token := consumeIdent()
+	token := consumeKind(tkIdent)
 	if token != nil {
 		return newNodeIdent(token.str)
 	}
