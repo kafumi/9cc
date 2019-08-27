@@ -13,14 +13,15 @@ func main() {
 
 	userInput = []rune(os.Args[1])
 	token = tokenize(userInput)
-	node := expr()
+	nodes := program()
 
-	fmt.Printf(".intel_syntax noprefix\n")
-	fmt.Printf(".global main\n")
-	fmt.Printf("main:\n")
+	genProgramHeader()
+	genPrologue()
 
-	gen(node)
+	for _, node := range nodes {
+		gen(node)
+		genPop()
+	}
 
-	fmt.Printf("  pop rax\n")
-	fmt.Printf("  ret\n")
+	genEpilogue()
 }

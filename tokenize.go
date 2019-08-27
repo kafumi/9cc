@@ -10,6 +10,7 @@ type TokenKind int
 
 const (
 	tkReserved TokenKind = iota // Symbol
+	tkIdent                     // Identifier
 	tkNum                       // Integer
 	tkEOF                       // End of input
 )
@@ -30,6 +31,15 @@ func consume(op string) bool {
 		return true
 	}
 	return false
+}
+
+func consumeIdent() *Token {
+	if token.kind == tkIdent {
+		ident := token
+		token = token.next
+		return ident
+	}
+	return nil
 }
 
 func expect(op string) {
@@ -77,7 +87,16 @@ func tokenize(p []rune) *Token {
 		}
 
 		switch p[0] {
-		case '=', '!':
+		case '=':
+			if p[1] == '=' {
+				cur = newToken(tkReserved, cur, p[:2], lenAll-len(p))
+				p = p[2:]
+			} else {
+				cur = newToken(tkReserved, cur, p[:1], lenAll-len(p))
+				p = p[1:]
+			}
+			continue
+		case '!':
 			if p[1] != '=' {
 				fatalAtStr(p[1:], "Next character is not '='")
 			}
@@ -93,8 +112,14 @@ func tokenize(p []rune) *Token {
 				p = p[1:]
 			}
 			continue
-		case '+', '-', '*', '/', '(', ')':
+		case '+', '-', '*', '/', '(', ')', ';':
 			cur = newToken(tkReserved, cur, p[:1], lenAll-len(p))
+			p = p[1:]
+			continue
+		}
+
+		if p[0] >= 'a' && p[0] <= 'z' {
+			cur = newToken(tkIdent, cur, p[:1], lenAll-len(p))
 			p = p[1:]
 			continue
 		}
