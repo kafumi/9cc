@@ -1,5 +1,5 @@
-9cc: 9cc.go
-	go build $^
+9cc: $(wildcard *.go)
+	go build -o $@ $^
 
 .PHONY: test
 test: 9cc
