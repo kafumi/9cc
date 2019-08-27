@@ -3,22 +3,22 @@ package main
 type NodeKind int
 
 const (
-	ndEq = iota
-	ndNe
-	ndLt
-	ndLe
-	ndAdd
-	ndSub
-	ndMul
-	ndDiv
-	ndNum
+	ndEq  = iota // ==
+	ndNe         // !=
+	ndLt         // <
+	ndLe         // <=
+	ndAdd        // +
+	ndSub        // -
+	ndMul        // *
+	ndDiv        // /
+	ndNum        // Integer
 )
 
 type Node struct {
 	kind NodeKind
-	lhs  *Node
-	rhs  *Node
-	val  int
+	lhs  *Node // Left-hand side
+	rhs  *Node // Right-hand side
+	val  int   // Valid only if kind is ndNum
 }
 
 func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {

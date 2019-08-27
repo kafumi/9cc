@@ -9,15 +9,15 @@ import (
 type TokenKind int
 
 const (
-	tkReserved TokenKind = iota
-	tkNum
-	tkEOF
+	tkReserved TokenKind = iota // Symbol
+	tkNum                       // Integer
+	tkEOF                       // End of input
 )
 
 type Token struct {
 	kind TokenKind
 	next *Token
-	val  int
+	val  int // Valid only if kind is tkNum
 	pos  int
 	str  []rune
 }
