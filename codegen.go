@@ -80,7 +80,7 @@ func genProgramHeader() {
 func genPrologue() {
 	fmt.Printf("  push rbp\n")
 	fmt.Printf("  mov rbp, rsp\n")
-	fmt.Printf("  sub rsp, 208\n") // 208 = 8 bits * 26 variables
+	fmt.Printf("  sub rsp, %d\n", getLocalVarsOffset())
 }
 
 func genEpilogue() {

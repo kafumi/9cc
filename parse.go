@@ -1,5 +1,54 @@
 package main
 
+import "reflect"
+
+type LocalVar struct {
+	next   *LocalVar
+	name   []rune // Variable name
+	offset int    // Offset from RBP
+}
+
+var localVars *LocalVar
+
+func newLocalVar(name []rune) *LocalVar {
+	prevOffset := 0
+	if localVars != nil {
+		prevOffset = localVars.offset
+	}
+
+	lvar := &LocalVar{
+		next:   localVars,
+		name:   name,
+		offset: prevOffset + 8,
+	}
+	localVars = lvar
+	return lvar
+}
+
+func findLocalVar(name []rune) *LocalVar {
+	for lvar := localVars; lvar != nil; lvar = lvar.next {
+		if reflect.DeepEqual(lvar.name, name) {
+			return lvar
+		}
+	}
+	return nil
+}
+
+func findOrCreateLocalVar(name []rune) *LocalVar {
+	lvar := findLocalVar(name)
+	if lvar == nil {
+		lvar = newLocalVar(name)
+	}
+	return lvar
+}
+
+func getLocalVarsOffset() int {
+	if localVars != nil {
+		return localVars.offset
+	}
+	return 0
+}
+
 type NodeKind int
 
 const (
@@ -33,9 +82,10 @@ func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
 }
 
 func newNodeIdent(name []rune) *Node {
+	lvar := findOrCreateLocalVar(name)
 	return &Node{
 		kind:   ndLvar,
-		offset: int((name[0] - 'a' + 1) * 8),
+		offset: lvar.offset,
 	}
 }
 

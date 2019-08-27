@@ -118,9 +118,10 @@ func tokenize(p []rune) *Token {
 			continue
 		}
 
-		if p[0] >= 'a' && p[0] <= 'z' {
-			cur = newToken(tkIdent, cur, p[:1], lenAll-len(p))
-			p = p[1:]
+		if isTokenFirstChar(p[0]) {
+			name := readIdent(p)
+			cur = newToken(tkIdent, cur, name, lenAll-len(p))
+			p = p[len(name):]
 			continue
 		}
 
@@ -139,6 +140,14 @@ func tokenize(p []rune) *Token {
 	return head.next
 }
 
+func readIdent(p []rune) []rune {
+	length := 0
+	for length < len(p) && isTokenChar(p[length]) {
+		length++
+	}
+	return p[:length]
+}
+
 func readNumber(program []rune) (int, int) {
 	length := 0
 	for length < len(program) && unicode.IsDigit(program[length]) {
@@ -152,4 +161,12 @@ func readNumber(program []rune) (int, int) {
 	}
 
 	return number, length
+}
+
+func isTokenFirstChar(r rune) bool {
+	return unicode.IsLetter(r) || r == '_'
+}
+
+func isTokenChar(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
 }
