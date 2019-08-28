@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 	"unicode"
@@ -19,9 +21,9 @@ const (
 type Token struct {
 	kind TokenKind
 	next *Token
-	val  int // Valid only if kind is tkNum
-	pos  int
 	str  []rune
+	pos  int
+	val  int // Valid only if kind is tkNum
 }
 
 var token *Token
@@ -75,112 +77,113 @@ func newToken(kind TokenKind, cur *Token, str []rune, pos int) *Token {
 }
 
 func tokenize(p []rune) *Token {
-	lenAll := len(p)
-	head := Token{
-		next: nil,
-	}
+	head := Token{next: nil}
 	cur := &head
 
-	for len(p) > 0 {
-		if unicode.IsSpace(p[0]) {
-			p = p[1:]
+	for pos, length := 0, len(p); pos < length; {
+		// Space
+		if unicode.IsSpace(p[pos]) {
+			pos++
 			continue
 		}
 
-		switch p[0] {
-		case '=':
-			if p[1] == '=' {
-				cur = newToken(tkReserved, cur, p[:2], lenAll-len(p))
-				p = p[2:]
-			} else {
-				cur = newToken(tkReserved, cur, p[:1], lenAll-len(p))
-				p = p[1:]
+		// 1 or 2 character symbol
+		l := isReservedSymbol(p, pos)
+		if l > 0 {
+			cur = newToken(tkReserved, cur, p[pos:pos+l], pos)
+			pos += l
+			continue
+		}
+
+		// "return"
+		l = isReservedWord(p, pos, "return")
+		if l > 0 {
+			cur = newToken(tkReturn, cur, p[pos:pos+l], pos)
+			pos += l
+			continue
+		}
+
+		// Variable name
+		l = isIdent(p, pos)
+		if l > 0 {
+			cur = newToken(tkIdent, cur, p[pos:pos+l], pos)
+			pos += l
+			continue
+		}
+
+		// Number
+		l = isNumber(p, pos)
+		if l > 0 {
+			str := p[pos : pos+l]
+			num, err := strconv.Atoi(string(str))
+			if err != nil {
+				fatalAt(pos, "Expect number")
 			}
-			continue
-		case '!':
-			if p[1] != '=' {
-				fatalAtStr(p[1:], "Next character is not '='")
-			}
-			cur = newToken(tkReserved, cur, p[:2], lenAll-len(p))
-			p = p[2:]
-			continue
-		case '<', '>':
-			if p[1] == '=' {
-				cur = newToken(tkReserved, cur, p[:2], lenAll-len(p))
-				p = p[2:]
-			} else {
-				cur = newToken(tkReserved, cur, p[:1], lenAll-len(p))
-				p = p[1:]
-			}
-			continue
-		case '+', '-', '*', '/', '(', ')', ';':
-			cur = newToken(tkReserved, cur, p[:1], lenAll-len(p))
-			p = p[1:]
+			cur = newToken(tkNum, cur, str, pos)
+			cur.val = num
+			pos += l
 			continue
 		}
 
-		if isReservedWord(p, "return") {
-			cur = newToken(tkReturn, cur, p[:6], lenAll-len(p))
-			p = p[6:]
-			continue
-		}
-
-		if isTokenFirstChar(p[0]) {
-			name := readIdent(p)
-			cur = newToken(tkIdent, cur, name, lenAll-len(p))
-			p = p[len(name):]
-			continue
-		}
-
-		if unicode.IsDigit(p[0]) {
-			val, length := readNumber(p)
-			cur = newToken(tkNum, cur, p[:length], lenAll-len(p))
-			cur.val = val
-			p = p[length:]
-			continue
-		}
-
-		fatalAtStr(p, "Unable to tokenize")
+		fatalAt(pos, "Unable to tokenize")
 	}
 
-	newToken(tkEOF, cur, p, lenAll)
+	newToken(tkEOF, cur, []rune{}, len(p))
 	return head.next
 }
 
-func isReservedWord(p []rune, word string) bool {
+func isReservedSymbol(p []rune, pos int) int {
+	remain := len(p) - pos
+
+	if remain >= 2 {
+		switch string(p[pos : pos+2]) {
+		case "<=", ">=", "==", "!=":
+			return 2
+		}
+	}
+
+	switch p[pos] {
+	case '+', '-', '*', '/', '(', ')', '<', '>', '=', ';':
+		return 1
+	}
+
+	return 0
+}
+
+func isReservedWord(p []rune, pos int, word string) int {
+	remain := len(p) - pos
 	runes := []rune(word)
-	length := len(runes)
-	if len(p) < length {
-		return false
+	l := len(runes)
+	if l > remain {
+		return 0
 	}
-	prefix := p[:length]
-	if !reflect.DeepEqual(prefix, runes) {
-		return false
+	if !reflect.DeepEqual(p[pos:pos+l], runes) {
+		return 0
 	}
-	return len(p) == length || !isTokenChar(p[length])
+	if l < remain && isTokenChar(p[pos+l]) {
+		return 0
+	}
+	return l
 }
 
-func readIdent(p []rune) []rune {
-	length := 0
-	for length < len(p) && isTokenChar(p[length]) {
-		length++
+func isIdent(p []rune, pos int) int {
+	if !isTokenFirstChar(p[pos]) {
+		return 0
 	}
-	return p[:length]
+
+	end := pos + 1
+	for end < len(p) && isTokenChar(p[end]) {
+		end++
+	}
+	return end - pos
 }
 
-func readNumber(program []rune) (int, int) {
-	length := 0
-	for length < len(program) && unicode.IsDigit(program[length]) {
-		length++
+func isNumber(p []rune, pos int) int {
+	end := pos
+	for end < len(p) && unicode.IsDigit(p[end]) {
+		end++
 	}
-
-	target := string(program[0:length])
-	number, err := strconv.Atoi(target)
-	if err != nil {
-		fatalAtStr(program, "Expect number")
-	}
-
-	return number, length
+	return end - pos
 }
 
 func isTokenFirstChar(r rune) bool {
@@ -189,4 +192,11 @@ func isTokenFirstChar(r rune) bool {
 
 func isTokenChar(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
+}
+
+func printTokens() {
+	for t := token; t != nil; t = t.next {
+		fmt.Fprintf(os.Stderr, "token: kind=%d, str=\"%s\", pos=%d, val=%d\n",
+			t.kind, string(t.str), t.pos, t.val)
+	}
 }

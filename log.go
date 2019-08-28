@@ -22,7 +22,3 @@ func fatalAt(pos int, format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
 }
-
-func fatalAtStr(loc []rune, format string, a ...interface{}) {
-	fatalAt(len(userInput)-len(loc), format, a...)
-}
