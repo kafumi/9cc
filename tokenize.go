@@ -12,6 +12,8 @@ type TokenKind int
 
 const (
 	tkReserved TokenKind = iota // Symbol
+	tkIf                        // "if"
+	tkElse                      // "else"
 	tkReturn                    // "return"
 	tkIdent                     // Identifier
 	tkNum                       // Integer
@@ -95,10 +97,10 @@ func tokenize(p []rune) *Token {
 			continue
 		}
 
-		// "return"
-		l = isReservedWord(p, pos, "return")
+		// Reserved word (e.g. "if")
+		l, kind := isReservedWord(p, pos)
 		if l > 0 {
-			cur = newToken(tkReturn, cur, p[pos:pos+l], pos)
+			cur = newToken(kind, cur, p[pos:pos+l], pos)
 			pos += l
 			continue
 		}
@@ -150,20 +152,29 @@ func isReservedSymbol(p []rune, pos int) int {
 	return 0
 }
 
-func isReservedWord(p []rune, pos int, word string) int {
+func isReservedWord(p []rune, pos int) (int, TokenKind) {
+	words := map[string]TokenKind{
+		"if":     tkIf,
+		"else":   tkElse,
+		"return": tkReturn,
+	}
+
 	remain := len(p) - pos
-	runes := []rune(word)
-	l := len(runes)
-	if l > remain {
-		return 0
+	for word, kind := range words {
+		runes := []rune(word)
+		l := len(runes)
+		if l > remain {
+			continue
+		}
+		if !reflect.DeepEqual(p[pos:pos+l], runes) {
+			continue
+		}
+		if l < remain && isTokenChar(p[pos+l]) {
+			continue
+		}
+		return l, kind
 	}
-	if !reflect.DeepEqual(p[pos:pos+l], runes) {
-		return 0
-	}
-	if l < remain && isTokenChar(p[pos+l]) {
-		return 0
-	}
-	return l
+	return 0, 0
 }
 
 func isIdent(p []rune, pos int) int {

@@ -2,6 +2,8 @@ package main
 
 import "fmt"
 
+var labelSeq = 0
+
 func gen(node *Node) {
 	switch node.kind {
 	case ndNum:
@@ -20,6 +22,24 @@ func gen(node *Node) {
 		fmt.Printf("  pop rax\n")
 		fmt.Printf("  mov [rax], rdi\n")
 		fmt.Printf("  push rdi\n")
+		return
+	case ndIf:
+		seq := labelSeq
+		labelSeq++
+
+		gen(node.test)
+		fmt.Printf("  pop rax\n")
+		fmt.Printf("  cmp rax, 0\n")
+		fmt.Printf("  je  .L%s%d\n", "else", seq)
+		gen(node.cons)
+		fmt.Printf("  jmp .L%s%d\n", "end", seq)
+		fmt.Printf(".L%s%d:\n", "else", seq)
+		if node.alt != nil {
+			gen(node.alt)
+		} else {
+			genPush()
+		}
+		fmt.Printf(".L%s%d:\n", "end", seq)
 		return
 	case ndReturn:
 		gen(node.lhs)
@@ -92,6 +112,10 @@ func genEpilogue() {
 	fmt.Printf("  mov rsp, rbp\n")
 	fmt.Printf("  pop rbp\n")
 	fmt.Printf("  ret\n")
+}
+
+func genPush() {
+	fmt.Printf("  push 0xdb\n")
 }
 
 func genPop() {

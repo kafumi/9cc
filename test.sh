@@ -49,5 +49,9 @@ try 23 'foo=3; bar=4*5; foo=foo+bar; foo;'
 try 2 'a1=10; a2=20; a2/a1;'
 try 5 'return 5; return 8;'
 try 10 'return1=7; return1+3;'
+try 5 'a=1; if(3>a) a=5; a;'
+try 1 'a=1; if(a>3) a=5; a;'
+try 5 'a=1; if(3>a) a=5; else a=7; a;'
+try 7 'a=1; if(a>3) a=5; else a=7; a;'
 
 echo OK

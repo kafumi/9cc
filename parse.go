@@ -61,17 +61,28 @@ const (
 	ndMul           // *
 	ndDiv           // /
 	ndAssign        // =
+	ndIf            // "if"
 	ndReturn        // "return"
 	ndLvar          // Local variable
 	ndNum           // Integer
 )
 
 type Node struct {
-	kind   NodeKind
-	lhs    *Node // Left-hand side
-	rhs    *Node // Right-hand side
-	val    int   // Valid only if kind is ndNum
-	offset int   // Valid only if kind is ndLvar
+	kind NodeKind
+
+	lhs *Node // Left-hand side
+	rhs *Node // Right-hand side
+
+	// "if" statement
+	test *Node
+	cons *Node
+	alt  *Node
+
+	// Variable
+	offset int
+
+	// Number literal
+	val int
 }
 
 func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
@@ -82,7 +93,16 @@ func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
 	}
 }
 
-func newNodeIdent(name []rune) *Node {
+func newNodeIf(test *Node, cons *Node, alt *Node) *Node {
+	return &Node{
+		kind: ndIf,
+		test: test,
+		cons: cons,
+		alt:  alt,
+	}
+}
+
+func newNodeLVar(name []rune) *Node {
 	lvar := findOrCreateLocalVar(name)
 	return &Node{
 		kind:   ndLvar,
@@ -107,12 +127,23 @@ func program() []*Node {
 
 func stmt() *Node {
 	var node *Node
-	if consumeKind(tkReturn) != nil {
+	if consumeKind(tkIf) != nil {
+		expect("(")
+		test := expr()
+		expect(")")
+		cons := stmt()
+		var alt *Node
+		if consumeKind(tkElse) != nil {
+			alt = stmt()
+		}
+		node = newNodeIf(test, cons, alt)
+	} else if consumeKind(tkReturn) != nil {
 		node = newNode(ndReturn, expr(), nil)
+		expect(";")
 	} else {
 		node = expr()
+		expect(";")
 	}
-	expect(";")
 	return node
 }
 
@@ -208,7 +239,7 @@ func primary() *Node {
 
 	token := consumeKind(tkIdent)
 	if token != nil {
-		return newNodeIdent(token.str)
+		return newNodeLVar(token.str)
 	}
 
 	return newNodeNum(expectNumber())
