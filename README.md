@@ -7,6 +7,7 @@
 ```ebnf
 program    = stmt*
 stmt       = expr ";"
+           | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?
            | "while" "(" expr ")" stmt
            | "for" "(" expr? ";" expr? ";" expr? ")" stmt

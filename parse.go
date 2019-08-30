@@ -64,6 +64,7 @@ const (
 	ndIf            // "if"
 	ndWhile         // "while"
 	ndFor           // "for"
+	ndBlock         // { ... }
 	ndReturn        // "return"
 	ndLvar          // Local variable
 	ndNum           // Integer
@@ -81,6 +82,9 @@ type Node struct {
 	alt  *Node
 	init *Node
 	post *Node
+
+	// Block
+	body []*Node
 
 	// Variable
 	offset int
@@ -121,6 +125,13 @@ func newNodeFor(init *Node, test *Node, post *Node, cons *Node) *Node {
 		test: test,
 		post: post,
 		cons: cons,
+	}
+}
+
+func newNodeBlock(body []*Node) *Node {
+	return &Node{
+		kind: ndBlock,
+		body: body,
 	}
 }
 
@@ -185,6 +196,12 @@ func stmt() *Node {
 	} else if consumeKind(tkReturn) != nil {
 		node = newNode(ndReturn, expr(), nil)
 		expect(";")
+	} else if consume("{") {
+		var body []*Node
+		for !consume("}") {
+			body = append(body, stmt())
+		}
+		node = newNodeBlock(body)
 	} else {
 		node = expr()
 		expect(";")

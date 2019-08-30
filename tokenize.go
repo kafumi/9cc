@@ -147,7 +147,7 @@ func isReservedSymbol(p []rune, pos int) int {
 	}
 
 	switch p[pos] {
-	case '+', '-', '*', '/', '(', ')', '<', '>', '=', ';':
+	case '+', '-', '*', '/', '(', ')', '<', '>', '=', '{', '}', ';':
 		return 1
 	}
 

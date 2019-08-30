@@ -57,5 +57,7 @@ try 16 'a=1; while(a<10) a=a*2; a;'
 try 1 'a=1; while(a>10) a=a*2; a;'
 try 8 'a=1; for(; a<5; ) a=a*2; a;'
 try 21 'b=1; for(a=63; a>10; a=a/3) b=b+1; a*b;'
+try 135 'for (a=5; a<100; a=a*3) {} a;'
+try 8 'a=1; b=2; if(a<2) {a=a+1; b=b+2;} a*b;'
 
 echo OK

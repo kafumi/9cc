@@ -81,6 +81,13 @@ func gen(node *Node) {
 		fmt.Printf(".L%s%d:\n", "end", seq)
 		genPush()
 		return
+	case ndBlock:
+		for _, stmt := range node.body {
+			gen(stmt)
+			genPop()
+		}
+		genPush()
+		return
 	case ndReturn:
 		gen(node.lhs)
 		fmt.Printf("  pop rax\n")
