@@ -55,5 +55,7 @@ try 5 'a=1; if(3>a) a=5; else a=7; a;'
 try 7 'a=1; if(a>3) a=5; else a=7; a;'
 try 16 'a=1; while(a<10) a=a*2; a;'
 try 1 'a=1; while(a>10) a=a*2; a;'
+try 8 'a=1; for(; a<5; ) a=a*2; a;'
+try 21 'b=1; for(a=63; a>10; a=a/3) b=b+1; a*b;'
 
 echo OK

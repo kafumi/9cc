@@ -9,6 +9,7 @@ program    = stmt*
 stmt       = expr ";"
            | "if" "(" expr ")" stmt ("else" stmt)?
            | "while" "(" expr ")" stmt
+           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
            | "return" expr ";"
 expr       = assign
 assign     = equality ("=" assign)?

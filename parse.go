@@ -63,6 +63,7 @@ const (
 	ndAssign        // =
 	ndIf            // "if"
 	ndWhile         // "while"
+	ndFor           // "for"
 	ndReturn        // "return"
 	ndLvar          // Local variable
 	ndNum           // Integer
@@ -74,10 +75,12 @@ type Node struct {
 	lhs *Node // Left-hand side
 	rhs *Node // Right-hand side
 
-	// "if", "while" statement
+	// "if", "while", "for" statement
 	test *Node
 	cons *Node
 	alt  *Node
+	init *Node
+	post *Node
 
 	// Variable
 	offset int
@@ -107,6 +110,16 @@ func newNodeWhile(test *Node, cons *Node) *Node {
 	return &Node{
 		kind: ndWhile,
 		test: test,
+		cons: cons,
+	}
+}
+
+func newNodeFor(init *Node, test *Node, post *Node, cons *Node) *Node {
+	return &Node{
+		kind: ndFor,
+		init: init,
+		test: test,
+		post: post,
 		cons: cons,
 	}
 }
@@ -152,6 +165,23 @@ func stmt() *Node {
 		expect(")")
 		cons := stmt()
 		node = newNodeWhile(test, cons)
+	} else if consumeKind(tkFor) != nil {
+		var init, test, post *Node
+		expect("(")
+		if !consume(";") {
+			init = expr()
+			expect(";")
+		}
+		if !consume(";") {
+			test = expr()
+			expect(";")
+		}
+		if !consume(")") {
+			post = expr()
+			expect(")")
+		}
+		cons := stmt()
+		node = newNodeFor(init, test, post, cons)
 	} else if consumeKind(tkReturn) != nil {
 		node = newNode(ndReturn, expr(), nil)
 		expect(";")

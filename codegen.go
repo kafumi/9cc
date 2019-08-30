@@ -56,6 +56,31 @@ func gen(node *Node) {
 		fmt.Printf(".L%s%d:\n", "end", seq)
 		genPush()
 		return
+	case ndFor:
+		seq := labelSeq
+		labelSeq++
+
+		if node.init != nil {
+			gen(node.init)
+			genPop()
+		}
+		fmt.Printf(".L%s%d:\n", "begin", seq)
+		if node.test != nil {
+			gen(node.test)
+			fmt.Printf("  pop rax\n")
+			fmt.Printf("  cmp rax, 0\n")
+			fmt.Printf("  je  .L%s%d\n", "end", seq)
+		}
+		gen(node.cons)
+		genPop()
+		if node.post != nil {
+			gen(node.post)
+			genPop()
+		}
+		fmt.Printf("  jmp .L%s%d\n", "begin", seq)
+		fmt.Printf(".L%s%d:\n", "end", seq)
+		genPush()
+		return
 	case ndReturn:
 		gen(node.lhs)
 		fmt.Printf("  pop rax\n")

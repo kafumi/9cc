@@ -15,6 +15,7 @@ const (
 	tkIf                        // "if"
 	tkElse                      // "else"
 	tkWhile                     // "while"
+	tkFor                       // "for"
 	tkReturn                    // "return"
 	tkIdent                     // Identifier
 	tkNum                       // Integer
@@ -158,6 +159,7 @@ func isReservedWord(p []rune, pos int) (int, TokenKind) {
 		"if":     tkIf,
 		"else":   tkElse,
 		"while":  tkWhile,
+		"for":    tkFor,
 		"return": tkReturn,
 	}
 
