@@ -62,6 +62,7 @@ const (
 	ndDiv           // /
 	ndAssign        // =
 	ndIf            // "if"
+	ndWhile         // "while"
 	ndReturn        // "return"
 	ndLvar          // Local variable
 	ndNum           // Integer
@@ -73,7 +74,7 @@ type Node struct {
 	lhs *Node // Left-hand side
 	rhs *Node // Right-hand side
 
-	// "if" statement
+	// "if", "while" statement
 	test *Node
 	cons *Node
 	alt  *Node
@@ -99,6 +100,14 @@ func newNodeIf(test *Node, cons *Node, alt *Node) *Node {
 		test: test,
 		cons: cons,
 		alt:  alt,
+	}
+}
+
+func newNodeWhile(test *Node, cons *Node) *Node {
+	return &Node{
+		kind: ndWhile,
+		test: test,
+		cons: cons,
 	}
 }
 
@@ -137,6 +146,12 @@ func stmt() *Node {
 			alt = stmt()
 		}
 		node = newNodeIf(test, cons, alt)
+	} else if consumeKind(tkWhile) != nil {
+		expect("(")
+		test := expr()
+		expect(")")
+		cons := stmt()
+		node = newNodeWhile(test, cons)
 	} else if consumeKind(tkReturn) != nil {
 		node = newNode(ndReturn, expr(), nil)
 		expect(";")

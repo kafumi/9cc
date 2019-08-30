@@ -14,6 +14,7 @@ const (
 	tkReserved TokenKind = iota // Symbol
 	tkIf                        // "if"
 	tkElse                      // "else"
+	tkWhile                     // "while"
 	tkReturn                    // "return"
 	tkIdent                     // Identifier
 	tkNum                       // Integer
@@ -156,6 +157,7 @@ func isReservedWord(p []rune, pos int) (int, TokenKind) {
 	words := map[string]TokenKind{
 		"if":     tkIf,
 		"else":   tkElse,
+		"while":  tkWhile,
 		"return": tkReturn,
 	}
 
