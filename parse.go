@@ -89,6 +89,7 @@ type Node struct {
 
 	// Function call
 	funcName string
+	args     []*Node
 
 	// Variable
 	offset int
@@ -139,10 +140,11 @@ func newNodeBlock(body []*Node) *Node {
 	}
 }
 
-func newNodeFcall(name []rune) *Node {
+func newNodeFcall(name []rune, args []*Node) *Node {
 	return &Node{
 		kind:     ndFcall,
 		funcName: string(name),
+		args:     args,
 	}
 }
 
@@ -313,8 +315,17 @@ func primary() *Node {
 	token := consumeKind(tkIdent)
 	if token != nil {
 		if consume("(") {
-			expect(")")
-			return newNodeFcall(token.str)
+			var args []*Node
+			firstArg := true
+			for !consume(")") {
+				if firstArg {
+					firstArg = false
+				} else {
+					expect(",")
+				}
+				args = append(args, expr())
+			}
+			return newNodeFcall(token.str, args)
 		}
 		return newNodeLVar(token.str)
 	}

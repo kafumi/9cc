@@ -88,6 +88,14 @@ func gen(node *Node) {
 		seq := labelSeq
 		labelSeq++
 
+		argRegs := []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+		for _, arg := range node.args {
+			gen(arg)
+		}
+		for i := len(node.args) - 1; i >= 0; i-- {
+			fmt.Printf("  pop %s\n", argRegs[i])
+		}
+
 		// We need to make RSP 16 byte aligned when calling function.
 		fmt.Printf("  mov rax, rsp\n")
 		fmt.Printf("  and rax, 15\n")

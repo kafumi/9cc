@@ -60,5 +60,11 @@ try 21 'b=1; for(a=63; a>10; a=a/3) b=b+1; a*b;'
 try 135 'for (a=5; a<100; a=a*3) {} a;'
 try 8 'a=1; b=2; if(a<2) {a=a+1; b=b+2;} a*b;'
 try 2 '1+func0();'
+try 3 '1+func1(1);'
+try 5 '1+func2(1, 2);'
+try 8 '1+func3(1, 2, 3);'
+try 12 '1+func4(1, 2, 3, 4);'
+try 17 '1+func5(1, 2, 3, 4, 5);'
+try 23 '1+func6(1, 2, 3, 4, 5, 6);'
 
 echo OK
