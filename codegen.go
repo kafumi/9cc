@@ -6,15 +6,6 @@ var labelSeq = 0
 
 func gen(node *Node) {
 	switch node.kind {
-	case ndNum:
-		fmt.Printf("  push %d\n", node.val)
-		return
-	case ndLvar:
-		genLval(node)
-		fmt.Printf("  pop rax\n")
-		fmt.Printf("  mov rax, [rax]\n")
-		fmt.Printf("  push rax\n")
-		return
 	case ndAssign:
 		genLval(node.lhs)
 		gen(node.rhs)
@@ -92,6 +83,15 @@ func gen(node *Node) {
 		gen(node.lhs)
 		fmt.Printf("  pop rax\n")
 		genEpilogue()
+		return
+	case ndLvar:
+		genLval(node)
+		fmt.Printf("  pop rax\n")
+		fmt.Printf("  mov rax, [rax]\n")
+		fmt.Printf("  push rax\n")
+		return
+	case ndNum:
+		fmt.Printf("  push %d\n", node.val)
 		return
 	}
 
