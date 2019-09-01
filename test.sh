@@ -5,7 +5,7 @@ try() {
   input="$2"
 
   ./9cc "$input" > tmp.s
-  gcc -o tmp tmp.s
+  gcc -o tmp tmp.s test/*.o
   ./tmp
   actual="$?"
   rm -f tmp
@@ -59,5 +59,6 @@ try 8 'a=1; for(; a<5; ) a=a*2; a;'
 try 21 'b=1; for(a=63; a>10; a=a/3) b=b+1; a*b;'
 try 135 'for (a=5; a<100; a=a*3) {} a;'
 try 8 'a=1; b=2; if(a<2) {a=a+1; b=b+2;} a*b;'
+try 2 '1+func0();'
 
 echo OK

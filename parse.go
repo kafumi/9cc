@@ -66,6 +66,7 @@ const (
 	ndFor           // "for"
 	ndBlock         // { ... }
 	ndReturn        // "return"
+	ndFcall         // Function call
 	ndLvar          // Local variable
 	ndNum           // Integer
 )
@@ -85,6 +86,9 @@ type Node struct {
 
 	// Block
 	body []*Node
+
+	// Function call
+	funcName string
 
 	// Variable
 	offset int
@@ -132,6 +136,13 @@ func newNodeBlock(body []*Node) *Node {
 	return &Node{
 		kind: ndBlock,
 		body: body,
+	}
+}
+
+func newNodeFcall(name []rune) *Node {
+	return &Node{
+		kind:     ndFcall,
+		funcName: string(name),
 	}
 }
 
@@ -301,6 +312,10 @@ func primary() *Node {
 
 	token := consumeKind(tkIdent)
 	if token != nil {
+		if consume("(") {
+			expect(")")
+			return newNodeFcall(token.str)
+		}
 		return newNodeLVar(token.str)
 	}
 

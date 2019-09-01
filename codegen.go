@@ -84,6 +84,24 @@ func gen(node *Node) {
 		fmt.Printf("  pop rax\n")
 		genEpilogue()
 		return
+	case ndFcall:
+		seq := labelSeq
+		labelSeq++
+
+		// We need to make RSP 16 byte aligned when calling function.
+		fmt.Printf("  mov rax, rsp\n")
+		fmt.Printf("  and rax, 15\n")
+		fmt.Printf("  cmp rax, 0\n")
+		fmt.Printf("  je  .L%s%d\n", "call", seq)
+		fmt.Printf("  sub rsp, 8\n")
+		fmt.Printf("  call %s\n", node.funcName)
+		fmt.Printf("  add rsp, 8\n")
+		fmt.Printf("  jmp .L%s%d\n", "end", seq)
+		fmt.Printf(".L%s%d:\n", "call", seq)
+		fmt.Printf("  call %s\n", node.funcName)
+		fmt.Printf(".L%s%d:\n", "end", seq)
+		fmt.Printf("  push rax\n")
+		return
 	case ndLvar:
 		genLval(node)
 		fmt.Printf("  pop rax\n")
