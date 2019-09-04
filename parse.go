@@ -1,52 +1,35 @@
 package main
 
-import "reflect"
-
-type LocalVar struct {
-	next   *LocalVar
-	name   []rune // Variable name
-	offset int    // Offset from RBP
+type Var struct {
+	name   []rune
+	offset int
 }
 
-var localVars *LocalVar
-
-func newLocalVar(name []rune) *LocalVar {
-	prevOffset := 0
-	if localVars != nil {
-		prevOffset = localVars.offset
+func newVar(name []rune) *Var {
+	str := string(name)
+	if _, exist := env.vars[str]; exist {
+		fatal("Variable \"%s\" is already defined", str)
 	}
-
-	lvar := &LocalVar{
-		next:   localVars,
+	v := &Var{
 		name:   name,
-		offset: prevOffset + 8,
+		offset: env.maxOffset + 8,
 	}
-	localVars = lvar
-	return lvar
+	env.vars[str] = v
+	env.maxOffset = v.offset
+	return v
 }
 
-func findLocalVar(name []rune) *LocalVar {
-	for lvar := localVars; lvar != nil; lvar = lvar.next {
-		if reflect.DeepEqual(lvar.name, name) {
-			return lvar
-		}
-	}
-	return nil
+func findVar(name []rune) *Var {
+	return env.vars[string(name)]
 }
 
-func findOrCreateLocalVar(name []rune) *LocalVar {
-	lvar := findLocalVar(name)
-	if lvar == nil {
-		lvar = newLocalVar(name)
-	}
-	return lvar
+type Env struct {
+	vars      map[string]*Var
+	maxOffset int
 }
 
-func getLocalVarsOffset() int {
-	if localVars != nil {
-		return localVars.offset
-	}
-	return 0
+var env = &Env{
+	vars: make(map[string]*Var),
 }
 
 type NodeKind int
@@ -149,7 +132,10 @@ func newNodeFcall(name []rune, args []*Node) *Node {
 }
 
 func newNodeLVar(name []rune) *Node {
-	lvar := findOrCreateLocalVar(name)
+	lvar := findVar(name)
+	if lvar == nil {
+		lvar = newVar(name)
+	}
 	return &Node{
 		kind:   ndLvar,
 		offset: lvar.offset,

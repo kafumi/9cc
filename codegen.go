@@ -178,7 +178,7 @@ func genProgramHeader() {
 func genPrologue() {
 	fmt.Printf("  push rbp\n")
 	fmt.Printf("  mov rbp, rsp\n")
-	fmt.Printf("  sub rsp, %d\n", getLocalVarsOffset())
+	fmt.Printf("  sub rsp, %d\n", env.maxOffset)
 }
 
 func genEpilogue() {
