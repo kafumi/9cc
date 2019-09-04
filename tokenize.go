@@ -57,6 +57,16 @@ func expect(op string) {
 	}
 }
 
+func expectKind(kind TokenKind) *Token {
+	if token.kind == kind {
+		expected := token
+		token = token.next
+		return expected
+	}
+	fatalAt(token.pos, "Unexpected next token")
+	return nil
+}
+
 func expectNumber() int {
 	if token.kind != tkNum {
 		fatalAt(token.pos, "Next token is not number")

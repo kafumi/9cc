@@ -2,7 +2,45 @@ package main
 
 import "fmt"
 
+var argRegs = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 var labelSeq = 0
+
+func genProgram(funcs []*Function) {
+	genProgramHeader()
+	for _, f := range funcs {
+		genFunction(f)
+	}
+}
+
+func genProgramHeader() {
+	fmt.Printf(".intel_syntax noprefix\n")
+	fmt.Printf(".global main\n")
+}
+
+func genFunction(f *Function) {
+	fmt.Printf("%s:\n", string(f.name))
+	genPrologue(f.env)
+	for i, param := range f.params {
+		reg := argRegs[i]
+		fmt.Printf("  mov rax, rbp\n")
+		fmt.Printf("  sub rax, %d\n", param.offset)
+		fmt.Printf("  mov [rax], %s\n", reg)
+	}
+	gen(f.body)
+	genEpilogue()
+}
+
+func genPrologue(env *Env) {
+	fmt.Printf("  push rbp\n")
+	fmt.Printf("  mov rbp, rsp\n")
+	fmt.Printf("  sub rsp, %d\n", env.maxOffset)
+}
+
+func genEpilogue() {
+	fmt.Printf("  mov rsp, rbp\n")
+	fmt.Printf("  pop rbp\n")
+	fmt.Printf("  ret\n")
+}
 
 func gen(node *Node) {
 	switch node.kind {
@@ -88,7 +126,6 @@ func gen(node *Node) {
 		seq := labelSeq
 		labelSeq++
 
-		argRegs := []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 		for _, arg := range node.args {
 			gen(arg)
 		}
@@ -167,24 +204,6 @@ func genCmp(node *Node) {
 		fmt.Printf("  setle al\n")
 	}
 	fmt.Printf("  movzb rax, al\n")
-}
-
-func genProgramHeader() {
-	fmt.Printf(".intel_syntax noprefix\n")
-	fmt.Printf(".global main\n")
-	fmt.Printf("main:\n")
-}
-
-func genPrologue() {
-	fmt.Printf("  push rbp\n")
-	fmt.Printf("  mov rbp, rsp\n")
-	fmt.Printf("  sub rsp, %d\n", env.maxOffset)
-}
-
-func genEpilogue() {
-	fmt.Printf("  mov rsp, rbp\n")
-	fmt.Printf("  pop rbp\n")
-	fmt.Printf("  ret\n")
 }
 
 func genPush() {

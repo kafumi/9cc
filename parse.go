@@ -28,8 +28,20 @@ type Env struct {
 	maxOffset int
 }
 
-var env = &Env{
-	vars: make(map[string]*Var),
+var env *Env
+
+func newEnv() *Env {
+	env = &Env{
+		vars: make(map[string]*Var),
+	}
+	return env
+}
+
+type Function struct {
+	name   []rune
+	env    *Env
+	params []*Var
+	body   *Node
 }
 
 type NodeKind int
@@ -149,12 +161,44 @@ func newNodeNum(val int) *Node {
 	}
 }
 
-func program() []*Node {
-	var code []*Node
+func program() []*Function {
+	var funcs []*Function
 	for !atEOF() {
-		code = append(code, stmt())
+		funcs = append(funcs, funct())
 	}
-	return code
+	return funcs
+}
+
+func funct() *Function {
+	name := expectKind(tkIdent)
+	env := newEnv()
+
+	expect("(")
+	var params []*Var
+	firstParam := true
+	for !consume(")") {
+		if firstParam {
+			firstParam = false
+		} else {
+			expect(",")
+		}
+		param := expectKind(tkIdent)
+		params = append(params, newVar(param.str))
+	}
+
+	expect("{")
+	var stmts []*Node
+	for !consume("}") {
+		stmts = append(stmts, stmt())
+	}
+	body := newNodeBlock(stmts)
+
+	return &Function{
+		name:   name.str,
+		env:    env,
+		params: params,
+		body:   body,
+	}
 }
 
 func stmt() *Node {

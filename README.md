@@ -5,7 +5,8 @@
 ## EBNF
 
 ```ebnf
-program    = stmt*
+program    = funct*
+funct      = ident "(" (ident ("," ident)*)? ")" "{" stmt* "}"
 stmt       = expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?

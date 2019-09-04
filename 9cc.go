@@ -13,15 +13,6 @@ func main() {
 
 	userInput = []rune(os.Args[1])
 	token = tokenize(userInput)
-	nodes := program()
-
-	genProgramHeader()
-	genPrologue()
-
-	for _, node := range nodes {
-		gen(node)
-		genPop()
-	}
-
-	genEpilogue()
+	funcs := program()
+	genProgram(funcs)
 }
