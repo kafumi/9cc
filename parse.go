@@ -205,23 +205,23 @@ func funct() *Function {
 
 func stmt() *Node {
 	var node *Node
-	if consumeKind(tkIf) != nil {
+	if consume("if") {
 		expect("(")
 		test := expr()
 		expect(")")
 		cons := stmt()
 		var alt *Node
-		if consumeKind(tkElse) != nil {
+		if consume("else") {
 			alt = stmt()
 		}
 		node = newNodeIf(test, cons, alt)
-	} else if consumeKind(tkWhile) != nil {
+	} else if consume("while") {
 		expect("(")
 		test := expr()
 		expect(")")
 		cons := stmt()
 		node = newNodeWhile(test, cons)
-	} else if consumeKind(tkFor) != nil {
+	} else if consume("for") {
 		var init, test, post *Node
 		expect("(")
 		if !consume(";") {
@@ -238,7 +238,7 @@ func stmt() *Node {
 		}
 		cons := stmt()
 		node = newNodeFor(init, test, post, cons)
-	} else if consumeKind(tkReturn) != nil {
+	} else if consume("return") {
 		node = newNode(ndReturn, expr(), nil)
 		expect(";")
 	} else if consume("{") {
