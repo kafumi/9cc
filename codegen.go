@@ -165,6 +165,9 @@ func gen(node *Node) {
 	case ndNum:
 		fmt.Printf("  push %d\n", node.val)
 		return
+	case ndNull:
+		genPush()
+		return
 	}
 
 	gen(node.lhs)

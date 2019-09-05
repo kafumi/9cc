@@ -161,6 +161,7 @@ func isReservedSymbol(p []rune, pos int) int {
 
 func isReservedWord(p []rune, pos int) int {
 	words := []string{
+		"int",
 		"if",
 		"else",
 		"while",

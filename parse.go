@@ -66,6 +66,7 @@ const (
 	ndFcall         // Function call
 	ndLvar          // Local variable
 	ndNum           // Integer
+	ndNull          // Null statement
 )
 
 type Node struct {
@@ -93,6 +94,10 @@ type Node struct {
 
 	// Number literal
 	val int
+}
+
+var nullNode = &Node{
+	kind: ndNull,
 }
 
 func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
@@ -148,7 +153,7 @@ func newNodeFcall(name []rune, args []*Node) *Node {
 func newNodeLVar(name []rune) *Node {
 	lvar := findVar(name)
 	if lvar == nil {
-		lvar = newVar(name)
+		fatal("Variable \"%s\" is not defined", string(name))
 	}
 	return &Node{
 		kind:   ndLvar,
@@ -241,6 +246,11 @@ func stmt() *Node {
 	} else if consume("return") {
 		node = newNode(ndReturn, expr(), nil)
 		expect(";")
+	} else if consume("int") {
+		ident := expectKind(tkIdent)
+		newVar(ident.str)
+		expect(";")
+		node = nullNode
 	} else if consume("{") {
 		var body []*Node
 		for !consume("}") {
