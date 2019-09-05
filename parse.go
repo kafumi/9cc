@@ -1,16 +1,39 @@
 package main
 
+type TypeKind int
+
+const (
+	tyInt = iota
+	tyPtr
+)
+
+type Type struct {
+	kind  TypeKind
+	ptrTo *Type
+}
+
+var typeInt = &Type{kind: tyInt}
+
+func typePtrTo(ptrTo *Type) *Type {
+	return &Type{
+		kind:  tyPtr,
+		ptrTo: ptrTo,
+	}
+}
+
 type Var struct {
+	typ    *Type
 	name   []rune
 	offset int
 }
 
-func newVar(name []rune) *Var {
+func newVar(typ *Type, name []rune) *Var {
 	str := string(name)
 	if _, exist := env.vars[str]; exist {
 		fatal("Variable \"%s\" is already defined", str)
 	}
 	v := &Var{
+		typ:    typ,
 		name:   name,
 		offset: env.maxOffset + 8,
 	}
@@ -177,7 +200,7 @@ func program() []*Function {
 }
 
 func funct() *Function {
-	expect("int")
+	typ()
 	name := expectKind(tkIdent)
 	env := newEnv()
 
@@ -190,9 +213,9 @@ func funct() *Function {
 		} else {
 			expect(",")
 		}
-		expect("int")
-		param := expectKind(tkIdent)
-		params = append(params, newVar(param.str))
+		typ := typ()
+		ident := expectKind(tkIdent)
+		params = append(params, newVar(typ, ident.str))
 	}
 
 	expect("{")
@@ -248,9 +271,10 @@ func stmt() *Node {
 	} else if consume("return") {
 		node = newNode(ndReturn, expr(), nil)
 		expect(";")
-	} else if consume("int") {
+	} else if peekTyp() {
+		typ := typ()
 		ident := expectKind(tkIdent)
-		newVar(ident.str)
+		newVar(typ, ident.str)
 		expect(";")
 		node = nullNode
 	} else if consume("{") {
@@ -381,4 +405,17 @@ func primary() *Node {
 	}
 
 	return newNodeNum(expectNumber())
+}
+
+func typ() *Type {
+	expect("int")
+	typ := typeInt
+	for consume("*") {
+		typ = typePtrTo(typ)
+	}
+	return typ
+}
+
+func peekTyp() bool {
+	return peek("int")
 }

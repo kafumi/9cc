@@ -6,14 +6,14 @@
 
 ```ebnf
 program    = funct*
-funct      = "int" ident "(" ("int" ident ("," "int" ident)*)? ")" "{" stmt* "}"
+funct      = typ ident "(" (typ ident ("," typ ident)*)? ")" "{" stmt* "}"
 stmt       = expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?
            | "while" "(" expr ")" stmt
            | "for" "(" expr? ";" expr? ";" expr? ")" stmt
            | "return" expr ";"
-           | "int" ident ";"
+           | typ ident ";"
 expr       = assign
 assign     = equality ("=" assign)?
 equality   = relational ("==" relational | "!=" relational)*
@@ -27,4 +27,5 @@ unary      = "+"? primary
 primary    = num
            | ident ("(" (expr ("," expr)*)? ")")?
            | "(" expr ")"
+typ        = "int" "*"*
 ```

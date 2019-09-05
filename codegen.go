@@ -194,13 +194,16 @@ func gen(node *Node) {
 }
 
 func genLval(node *Node) {
-	if node.kind != ndLvar {
-		fatal("Left-hand side of assign expression is not variable")
+	switch node.kind {
+	case ndDeref:
+		gen(node.lhs)
+	case ndLvar:
+		fmt.Printf("  mov rax, rbp\n")
+		fmt.Printf("  sub rax, %d\n", node.offset)
+		fmt.Printf("  push rax\n")
+	default:
+		fatal("Left-hand side of assign expression is not assignable")
 	}
-
-	fmt.Printf("  mov rax, rbp\n")
-	fmt.Printf("  sub rax, %d\n", node.offset)
-	fmt.Printf("  push rax\n")
 }
 
 func genCmp(node *Node) {

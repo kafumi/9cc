@@ -27,6 +27,10 @@ type Token struct {
 
 var token *Token
 
+func peek(op string) bool {
+	return token.kind == tkReserved && reflect.DeepEqual(token.str, []rune(op))
+}
+
 func consume(op string) bool {
 	if token.kind == tkReserved && reflect.DeepEqual(token.str, []rune(op)) {
 		token = token.next
