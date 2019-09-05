@@ -6,7 +6,7 @@
 
 ```ebnf
 program    = funct*
-funct      = ident "(" (ident ("," ident)*)? ")" "{" stmt* "}"
+funct      = "int" ident "(" ("int" ident ("," "int" ident)*)? ")" "{" stmt* "}"
 stmt       = expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?

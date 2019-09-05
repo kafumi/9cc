@@ -177,6 +177,7 @@ func program() []*Function {
 }
 
 func funct() *Function {
+	expect("int")
 	name := expectKind(tkIdent)
 	env := newEnv()
 
@@ -189,6 +190,7 @@ func funct() *Function {
 		} else {
 			expect(",")
 		}
+		expect("int")
 		param := expectKind(tkIdent)
 		params = append(params, newVar(param.str))
 	}
