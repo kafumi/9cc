@@ -56,6 +56,8 @@ const (
 	ndMul           // *
 	ndDiv           // /
 	ndAssign        // =
+	ndAddr          // unary &
+	ndDeref         // unary *
 	ndIf            // "if"
 	ndWhile         // "while"
 	ndFor           // "for"
@@ -331,6 +333,12 @@ func unary() *Node {
 	}
 	if consume("-") {
 		return newNode(ndSub, newNodeNum(0), primary())
+	}
+	if consume("&") {
+		return newNode(ndAddr, unary(), nil)
+	}
+	if consume("*") {
+		return newNode(ndDeref, unary(), nil)
 	}
 	return primary()
 }

@@ -78,5 +78,7 @@ try   8 'fib(n){ if(n==0) return 0; if(n==1) return 1; fib(n-2)+fib(n-1); } main
 try  13 'fib(n){ if(n==0) return 0; if(n==1) return 1; fib(n-2)+fib(n-1); } main(){ fib(7); }'
 try  21 'fib(n){ if(n==0) return 0; if(n==1) return 1; fib(n-2)+fib(n-1); } main(){ fib(8); }'
 try  34 'fib(n){ if(n==0) return 0; if(n==1) return 1; fib(n-2)+fib(n-1); } main(){ fib(9); }'
+try   3 'main(){ x=3; y=&x; *y; }'
+try   3 'main(){ x=3; y=5; z=&y+8; *z; }'
 
 echo OK

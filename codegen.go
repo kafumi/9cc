@@ -52,6 +52,15 @@ func gen(node *Node) {
 		fmt.Printf("  mov [rax], rdi\n")
 		fmt.Printf("  push rdi\n")
 		return
+	case ndAddr:
+		genLval(node.lhs)
+		return
+	case ndDeref:
+		gen(node.lhs)
+		fmt.Printf("  pop rax\n")
+		fmt.Printf("  mov rax, [rax]\n")
+		fmt.Printf("  push rax\n")
+		return
 	case ndIf:
 		seq := labelSeq
 		labelSeq++
