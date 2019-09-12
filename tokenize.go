@@ -171,6 +171,7 @@ func isReservedWord(p []rune, pos int) int {
 		"while",
 		"for",
 		"return",
+		"sizeof",
 	}
 
 	remain := len(p) - pos

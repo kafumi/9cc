@@ -420,6 +420,10 @@ func unary() *Node {
 	if consume("*") {
 		return newNode(ndDeref, unary(), nil)
 	}
+	if consume("sizeof") {
+		node := unary()
+		return newNodeNum(nodeType(node).size)
+	}
 	return primary()
 }
 

@@ -83,5 +83,12 @@ try   3 'int main(){ int x; int y; int z; x=3; y=5; z=&y+2; *z; }'
 try   3 'int main(){ int x; int *y; y=&x; *y=3; x; }'
 try   4 'int main(){ int *p; int *q; alloc4(&p, 1, 2, 4, 8); q=p+2; *q; }'
 try   8 'int main(){ int *p; int *q; alloc4(&p, 1, 2, 4, 8); q=3+p; *q; }'
+try   4 'int main(){ int x; sizeof(x); }'
+try   8 'int main(){ int *x; sizeof(x); }'
+try   4 'int main(){ int x; sizeof(x + 1); }'
+try   8 'int main(){ int *x; sizeof(x + 2); }'
+try   4 'int main(){ int *x; sizeof(*x); }'
+try   4 'int main(){ sizeof(1); }'
+try   4 'int main(){ sizeof(sizeof(1)); }'
 
 echo OK
