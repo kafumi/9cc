@@ -9,14 +9,16 @@ const (
 
 type Type struct {
 	kind  TypeKind
+	size  int
 	ptrTo *Type
 }
 
-var typeInt = &Type{kind: tyInt}
+var typeInt = &Type{kind: tyInt, size: 4}
 
 func typePtrTo(ptrTo *Type) *Type {
 	return &Type{
 		kind:  tyPtr,
+		size:  8,
 		ptrTo: ptrTo,
 	}
 }
@@ -113,7 +115,7 @@ type Node struct {
 	args     []*Node
 
 	// Variable
-	offset int
+	lvar *Var
 
 	// Number literal
 	val int
@@ -179,8 +181,8 @@ func newNodeLVar(name []rune) *Node {
 		fatal("Variable \"%s\" is not defined", string(name))
 	}
 	return &Node{
-		kind:   ndLvar,
-		offset: lvar.offset,
+		kind: ndLvar,
+		lvar: lvar,
 	}
 }
 
@@ -188,6 +190,48 @@ func newNodeNum(val int) *Node {
 	return &Node{
 		kind: ndNum,
 		val:  val,
+	}
+}
+
+func nodeType(node *Node) *Type {
+	switch node.kind {
+	case ndEq, ndNe, ndLt, ndLe, ndMul, ndDiv, ndAssign, ndNum:
+		return typeInt
+	case ndAdd:
+		ltype := nodeType(node.lhs)
+		rtype := nodeType(node.rhs)
+		if ltype.kind == tyPtr && rtype.kind == tyPtr {
+			fatal("Can not add pointer type value to pointer type value")
+		}
+		if ltype.kind == tyPtr {
+			return ltype
+		}
+		return rtype
+	case ndSub:
+		ltype := nodeType(node.lhs)
+		rtype := nodeType(node.rhs)
+		if ltype.kind == tyInt && rtype.kind == tyPtr {
+			fatal("Can not subtract pointer type value from int value")
+		}
+		if ltype.kind == tyPtr && rtype.kind == tyPtr {
+			return typeInt
+		}
+		return ltype
+	case ndAddr:
+		return typePtrTo(nodeType(node.lhs))
+	case ndDeref:
+		derefNodeType := nodeType(node.lhs)
+		if derefNodeType.kind != tyPtr {
+			fatal("Node %+v should be pointer type", node.lhs)
+		}
+		return derefNodeType.ptrTo
+	case ndFcall:
+		return typeInt
+	case ndLvar:
+		return node.lvar.typ
+	default:
+		fatal("Node %+v don't have type", node)
+		return nil
 	}
 }
 

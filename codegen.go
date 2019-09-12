@@ -177,6 +177,24 @@ func gen(node *Node) {
 	fmt.Printf("  pop rax\n")
 
 	switch node.kind {
+	case ndAdd, ndSub:
+		var ptrType *Type
+		var regName string
+		ltype := nodeType(node.lhs)
+		rtype := nodeType(node.rhs)
+		if ltype.kind == tyPtr {
+			ptrType = ltype
+			regName = "rdi"
+		} else if rtype.kind == tyPtr {
+			ptrType = rtype
+			regName = "rax"
+		}
+		if ptrType != nil {
+			fmt.Printf("  imul %s, %d\n", regName, ptrType.ptrTo.size)
+		}
+	}
+
+	switch node.kind {
 	case ndEq, ndNe, ndLt, ndLe:
 		genCmp(node)
 	case ndAdd:
@@ -199,7 +217,7 @@ func genLval(node *Node) {
 		gen(node.lhs)
 	case ndLvar:
 		fmt.Printf("  mov rax, rbp\n")
-		fmt.Printf("  sub rax, %d\n", node.offset)
+		fmt.Printf("  sub rax, %d\n", node.lvar.offset)
 		fmt.Printf("  push rax\n")
 	default:
 		fatal("Left-hand side of assign expression is not assignable")

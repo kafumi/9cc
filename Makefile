@@ -8,4 +8,4 @@ test:
 
 .PHONY: clean
 clean:
-	rm -f 9cc tmp*
+	rm -f 9cc tmp* test/*.o
