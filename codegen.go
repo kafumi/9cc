@@ -2,7 +2,8 @@ package main
 
 import "fmt"
 
-var argRegs = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+var argRegs32 = []string{"edi", "esi", "edx", "ecx", "r8d", "r9d"}
+var argRegs64 = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 var labelSeq = 0
 
 func genProgram(funcs []*Function) {
@@ -21,10 +22,7 @@ func genFunction(f *Function) {
 	fmt.Printf("%s:\n", string(f.name))
 	genPrologue(f.env)
 	for i, param := range f.params {
-		reg := argRegs[i]
-		fmt.Printf("  mov rax, rbp\n")
-		fmt.Printf("  sub rax, %d\n", param.offset)
-		fmt.Printf("  mov [rax], %s\n", reg)
+		genLoadArg(i, param)
 	}
 	gen(f.body)
 	genEpilogue()
@@ -47,19 +45,14 @@ func gen(node *Node) {
 	case ndAssign:
 		genLval(node.lhs)
 		gen(node.rhs)
-		fmt.Printf("  pop rdi\n")
-		fmt.Printf("  pop rax\n")
-		fmt.Printf("  mov [rax], rdi\n")
-		fmt.Printf("  push rdi\n")
+		genStore(nodeType(node.lhs))
 		return
 	case ndAddr:
 		genLval(node.lhs)
 		return
 	case ndDeref:
 		gen(node.lhs)
-		fmt.Printf("  pop rax\n")
-		fmt.Printf("  mov rax, [rax]\n")
-		fmt.Printf("  push rax\n")
+		genLoad(nodeType(node))
 		return
 	case ndIf:
 		seq := labelSeq
@@ -139,7 +132,7 @@ func gen(node *Node) {
 			gen(arg)
 		}
 		for i := len(node.args) - 1; i >= 0; i-- {
-			fmt.Printf("  pop %s\n", argRegs[i])
+			fmt.Printf("  pop %s\n", argRegs64[i])
 		}
 
 		// We need to make RSP 16 byte aligned when calling function.
@@ -158,9 +151,7 @@ func gen(node *Node) {
 		return
 	case ndLvar:
 		genLval(node)
-		fmt.Printf("  pop rax\n")
-		fmt.Printf("  mov rax, [rax]\n")
-		fmt.Printf("  push rax\n")
+		genLoad(nodeType(node))
 		return
 	case ndNum:
 		fmt.Printf("  push %d\n", node.val)
@@ -209,6 +200,48 @@ func gen(node *Node) {
 	}
 
 	fmt.Printf("  push rax\n")
+}
+
+func genLoadArg(index int, param *Var) {
+	switch param.typ.size {
+	case 4:
+		fmt.Printf("  mov rax, rbp\n")
+		fmt.Printf("  sub rax, %d\n", param.offset)
+		fmt.Printf("  mov dword ptr [rax], %s\n", argRegs32[index])
+	case 8:
+		fmt.Printf("  mov rax, rbp\n")
+		fmt.Printf("  sub rax, %d\n", param.offset)
+		fmt.Printf("  mov [rax], %s\n", argRegs64[index])
+	default:
+		fatal("Loading %d byte argument is not supported: %+v", param.typ.size, param)
+	}
+}
+
+func genLoad(typ *Type) {
+	fmt.Printf("  pop rax\n")
+	switch typ.size {
+	case 4:
+		fmt.Printf("  mov eax, dword ptr [rax]\n")
+	case 8:
+		fmt.Printf("  mov rax, [rax]\n")
+	default:
+		fatal("Loading %d byte value is not supported: %+v", typ.size, typ)
+	}
+	fmt.Printf("  push rax\n")
+}
+
+func genStore(typ *Type) {
+	fmt.Printf("  pop rdi\n")
+	fmt.Printf("  pop rax\n")
+	switch typ.size {
+	case 4:
+		fmt.Printf("  mov dword ptr [rax], edi\n")
+	case 8:
+		fmt.Printf("  mov [rax], rdi\n")
+	default:
+		fatal("Storing %d byte value is not supported: %+v", typ.size, typ)
+	}
+	fmt.Printf("  push rdi\n")
 }
 
 func genLval(node *Node) {

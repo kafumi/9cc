@@ -37,7 +37,7 @@ func newVar(typ *Type, name []rune) *Var {
 	v := &Var{
 		typ:    typ,
 		name:   name,
-		offset: env.maxOffset + 8,
+		offset: env.maxOffset + typ.size,
 	}
 	env.vars[str] = v
 	env.maxOffset = v.offset
