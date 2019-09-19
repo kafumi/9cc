@@ -1,3 +1,4 @@
+CFLAGS=-static
 SRCS=$(wildcard *.go)
 TEST_SRCS=$(wildcard test/*.c)
 TEST_OBJS=$(TEST_SRCS:.c=.o)

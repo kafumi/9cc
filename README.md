@@ -5,8 +5,8 @@
 ## EBNF
 
 ```ebnf
-program    = funct*
-funct      = typ ident "(" (typ ident ("," typ ident)*)? ")" "{" stmt* "}"
+program    = toplv*
+toplv      = typ ident ("(" (typ ident ("," typ ident)*)? ")" "{" stmt* "}" | ("[" num "]")* ";")
 stmt       = expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?

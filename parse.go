@@ -35,12 +35,13 @@ func typeArray(ptrTo *Type, arraySize int) *Type {
 }
 
 type Var struct {
-	typ    *Type
-	name   []rune
-	offset int
+	typ      *Type
+	name     []rune
+	offset   int // Valid only if isGlobal = false
+	isGlobal bool
 }
 
-func newVar(typ *Type, name []rune) *Var {
+func newLocalVar(typ *Type, name []rune) *Var {
 	str := string(name)
 	if _, exist := env.vars[str]; exist {
 		fatal("Variable \"%s\" is already defined", str)
@@ -55,8 +56,27 @@ func newVar(typ *Type, name []rune) *Var {
 	return v
 }
 
+func newGlobalVar(typ *Type, name []rune) *Var {
+	str := string(name)
+	if _, exist := envGlobal.vars[str]; exist {
+		fatal("Variable \"%s\" is already defined", str)
+	}
+	v := &Var{
+		typ:      typ,
+		name:     name,
+		isGlobal: true,
+	}
+	envGlobal.vars[str] = v
+	return v
+}
+
 func findVar(name []rune) *Var {
-	return env.vars[string(name)]
+	str := string(name)
+	v := env.vars[str]
+	if v == nil {
+		v = envGlobal.vars[str]
+	}
+	return v
 }
 
 type Env struct {
@@ -65,6 +85,7 @@ type Env struct {
 }
 
 var env *Env
+var envGlobal *Env
 
 func newEnv() *Env {
 	env = &Env{
@@ -100,7 +121,7 @@ const (
 	ndBlock         // { ... }
 	ndReturn        // "return"
 	ndFcall         // Function call
-	ndLvar          // Local variable
+	ndVar           // Variable
 	ndNum           // Integer
 	ndNull          // Null statement
 )
@@ -126,7 +147,7 @@ type Node struct {
 	args     []*Node
 
 	// Variable
-	lvar *Var
+	vble *Var
 
 	// Number literal
 	val int
@@ -186,14 +207,14 @@ func newNodeFcall(name []rune, args []*Node) *Node {
 	}
 }
 
-func newNodeLVar(name []rune) *Node {
-	lvar := findVar(name)
-	if lvar == nil {
+func newNodeVar(name []rune) *Node {
+	v := findVar(name)
+	if v == nil {
 		fatal("Variable \"%s\" is not defined", string(name))
 	}
 	return &Node{
-		kind: ndLvar,
-		lvar: lvar,
+		kind: ndVar,
+		vble: v,
 	}
 }
 
@@ -242,8 +263,8 @@ func nodeType(node *Node) *Type {
 		return derefNodeType.ptrTo
 	case ndFcall:
 		return typeInt
-	case ndLvar:
-		return node.lvar.typ
+	case ndVar:
+		return node.vble.typ
 	default:
 		fatal("Node %+v don't have type", node)
 		return nil
@@ -251,45 +272,60 @@ func nodeType(node *Node) *Type {
 }
 
 func program() []*Function {
+	envGlobal = newEnv()
 	var funcs []*Function
 	for !atEOF() {
-		funcs = append(funcs, funct())
+		f := toplv()
+		if f != nil {
+			funcs = append(funcs, f)
+		}
 	}
 	return funcs
 }
 
-func funct() *Function {
-	typ()
+func toplv() *Function {
+	topTyp := typ()
 	name := expectKind(tkIdent)
-	env := newEnv()
 
-	expect("(")
-	var params []*Var
-	firstParam := true
-	for !consume(")") {
-		if firstParam {
-			firstParam = false
-		} else {
-			expect(",")
+	if consume("(") {
+		env := newEnv()
+		var params []*Var
+		firstParam := true
+		for !consume(")") {
+			if firstParam {
+				firstParam = false
+			} else {
+				expect(",")
+			}
+			paramTyp := typ()
+			ident := expectKind(tkIdent)
+			params = append(params, newLocalVar(paramTyp, ident.str))
 		}
-		typ := typ()
-		ident := expectKind(tkIdent)
-		params = append(params, newVar(typ, ident.str))
+
+		expect("{")
+		var stmts []*Node
+		for !consume("}") {
+			stmts = append(stmts, stmt())
+		}
+		body := newNodeBlock(stmts)
+
+		return &Function{
+			name:   name.str,
+			env:    env,
+			params: params,
+			body:   body,
+		}
 	}
 
-	expect("{")
-	var stmts []*Node
-	for !consume("}") {
-		stmts = append(stmts, stmt())
+	for consume("[") {
+		count := expectNumber()
+		expect("]")
+		topTyp = typeArray(topTyp, count)
 	}
-	body := newNodeBlock(stmts)
+	newGlobalVar(topTyp, name.str)
+	expect(";")
 
-	return &Function{
-		name:   name.str,
-		env:    env,
-		params: params,
-		body:   body,
-	}
+	return nil
 }
 
 func stmt() *Node {
@@ -338,7 +374,7 @@ func stmt() *Node {
 			expect("]")
 			typ = typeArray(typ, count)
 		}
-		newVar(typ, ident.str)
+		newLocalVar(typ, ident.str)
 		expect(";")
 		node = nullNode
 	} else if consume("{") {
@@ -475,7 +511,7 @@ func primary() *Node {
 			}
 			return newNodeFcall(token.str, args)
 		}
-		return newNodeLVar(token.str)
+		return newNodeVar(token.str)
 	}
 
 	return newNodeNum(expectNumber())

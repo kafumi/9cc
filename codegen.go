@@ -8,6 +8,8 @@ var labelSeq = 0
 
 func genProgram(funcs []*Function) {
 	genProgramHeader()
+	genDataSection()
+	genTextSectionHeader()
 	for _, f := range funcs {
 		genFunction(f)
 	}
@@ -15,6 +17,22 @@ func genProgram(funcs []*Function) {
 
 func genProgramHeader() {
 	fmt.Printf(".intel_syntax noprefix\n")
+}
+
+func genDataSection() {
+	for name := range envGlobal.vars {
+		fmt.Printf(".global %s\n", name)
+	}
+
+	fmt.Printf(".bss\n")
+	for name, v := range envGlobal.vars {
+		fmt.Printf("%s:\n", name)
+		fmt.Printf("  .zero %d\n", v.typ.size)
+	}
+}
+
+func genTextSectionHeader() {
+	fmt.Printf(".text\n")
 	fmt.Printf(".global main\n")
 }
 
@@ -149,7 +167,7 @@ func gen(node *Node) {
 		fmt.Printf(".L%s%d:\n", "end", seq)
 		fmt.Printf("  push rax\n")
 		return
-	case ndLvar:
+	case ndVar:
 		typ := nodeType(node)
 		genLval(node)
 		if typ.kind != tyArray {
@@ -251,10 +269,14 @@ func genLval(node *Node) {
 	switch node.kind {
 	case ndDeref:
 		gen(node.lhs)
-	case ndLvar:
-		fmt.Printf("  mov rax, rbp\n")
-		fmt.Printf("  sub rax, %d\n", node.lvar.offset)
-		fmt.Printf("  push rax\n")
+	case ndVar:
+		if node.vble.isGlobal {
+			fmt.Printf("  push offset %s\n", string(node.vble.name))
+		} else {
+			fmt.Printf("  mov rax, rbp\n")
+			fmt.Printf("  sub rax, %d\n", node.vble.offset)
+			fmt.Printf("  push rax\n")
+		}
 	default:
 		fatal("Left-hand side of assign expression is not assignable")
 	}
