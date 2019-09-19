@@ -5,12 +5,14 @@ type TypeKind int
 const (
 	tyInt = iota
 	tyPtr
+	tyArray
 )
 
 type Type struct {
-	kind  TypeKind
-	size  int
-	ptrTo *Type
+	kind      TypeKind
+	size      int   // sizeof
+	ptrTo     *Type // tyPtr: referenced type, tyArray: element type
+	arraySize int   // num of elements of array
 }
 
 var typeInt = &Type{kind: tyInt, size: 4}
@@ -20,6 +22,15 @@ func typePtrTo(ptrTo *Type) *Type {
 		kind:  tyPtr,
 		size:  8,
 		ptrTo: ptrTo,
+	}
+}
+
+func typeArray(ptrTo *Type, arraySize int) *Type {
+	return &Type{
+		kind:      tyArray,
+		size:      arraySize * ptrTo.size,
+		ptrTo:     ptrTo,
+		arraySize: arraySize,
 	}
 }
 
@@ -200,20 +211,24 @@ func nodeType(node *Node) *Type {
 	case ndAdd:
 		ltype := nodeType(node.lhs)
 		rtype := nodeType(node.rhs)
-		if ltype.kind == tyPtr && rtype.kind == tyPtr {
+		lptr := (ltype.kind == tyPtr || ltype.kind == tyArray)
+		rptr := (rtype.kind == tyPtr || rtype.kind == tyArray)
+		if lptr && rptr {
 			fatal("Can not add pointer type value to pointer type value")
 		}
-		if ltype.kind == tyPtr {
+		if lptr {
 			return ltype
 		}
 		return rtype
 	case ndSub:
 		ltype := nodeType(node.lhs)
 		rtype := nodeType(node.rhs)
-		if ltype.kind == tyInt && rtype.kind == tyPtr {
-			fatal("Can not subtract pointer type value from int value")
+		lptr := (ltype.kind == tyPtr || ltype.kind == tyArray)
+		rptr := (rtype.kind == tyPtr || rtype.kind == tyArray)
+		if !lptr && rptr {
+			fatal("Can not subtract pointer type value from non-pointer value")
 		}
-		if ltype.kind == tyPtr && rtype.kind == tyPtr {
+		if lptr && rptr {
 			return typeInt
 		}
 		return ltype
@@ -221,8 +236,8 @@ func nodeType(node *Node) *Type {
 		return typePtrTo(nodeType(node.lhs))
 	case ndDeref:
 		derefNodeType := nodeType(node.lhs)
-		if derefNodeType.kind != tyPtr {
-			fatal("Node %+v should be pointer type", node.lhs)
+		if derefNodeType.kind != tyPtr && derefNodeType.kind != tyArray {
+			fatal("Node %+v should be pointer type: %+v", node.lhs, derefNodeType)
 		}
 		return derefNodeType.ptrTo
 	case ndFcall:
@@ -318,6 +333,11 @@ func stmt() *Node {
 	} else if peekTyp() {
 		typ := typ()
 		ident := expectKind(tkIdent)
+		for consume("[") {
+			count := expectNumber()
+			expect("]")
+			typ = typeArray(typ, count)
+		}
 		newVar(typ, ident.str)
 		expect(";")
 		node = nullNode

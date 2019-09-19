@@ -150,8 +150,11 @@ func gen(node *Node) {
 		fmt.Printf("  push rax\n")
 		return
 	case ndLvar:
+		typ := nodeType(node)
 		genLval(node)
-		genLoad(nodeType(node))
+		if typ.kind != tyArray {
+			genLoad(typ)
+		}
 		return
 	case ndNum:
 		fmt.Printf("  push %d\n", node.val)
@@ -173,10 +176,10 @@ func gen(node *Node) {
 		var regName string
 		ltype := nodeType(node.lhs)
 		rtype := nodeType(node.rhs)
-		if ltype.kind == tyPtr {
+		if ltype.kind == tyPtr || ltype.kind == tyArray {
 			ptrType = ltype
 			regName = "rdi"
-		} else if rtype.kind == tyPtr {
+		} else if rtype.kind == tyPtr || rtype.kind == tyArray {
 			ptrType = rtype
 			regName = "rax"
 		}

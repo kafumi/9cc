@@ -90,5 +90,10 @@ try   8 'int main(){ int *x; sizeof(x + 2); }'
 try   4 'int main(){ int *x; sizeof(*x); }'
 try   4 'int main(){ sizeof(1); }'
 try   4 'int main(){ sizeof(sizeof(1)); }'
+try  16 'int main(){ int a[4]; sizeof(a); }'
+try   4 'int main(){ int a[4]; sizeof(*a); }'
+try  32 'int main(){ int *a[4]; sizeof(a); }'
+try   8 'int main(){ int *a[4]; sizeof(*a); }'
+try   3 'int main(){ int a[2]; *a = 1; *(a+1) = 2; int *p; p = a; *p + *(p+1); }'
 
 echo OK

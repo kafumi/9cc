@@ -13,7 +13,7 @@ stmt       = expr ";"
            | "while" "(" expr ")" stmt
            | "for" "(" expr? ";" expr? ";" expr? ")" stmt
            | "return" expr ";"
-           | typ ident ";"
+           | typ ident ("[" num "]")* ";"
 expr       = assign
 assign     = equality ("=" assign)?
 equality   = relational ("==" relational | "!=" relational)*
