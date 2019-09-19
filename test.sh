@@ -95,5 +95,7 @@ try   4 'int main(){ int a[4]; sizeof(*a); }'
 try  32 'int main(){ int *a[4]; sizeof(a); }'
 try   8 'int main(){ int *a[4]; sizeof(*a); }'
 try   3 'int main(){ int a[2]; *a = 1; *(a+1) = 2; int *p; p = a; *p + *(p+1); }'
+try   6 'int main(){ int a[3]; a[0]=1; a[1]=2; a[2]=3; a[0]+a[1]+a[2]; }'
+try  15 'int main(){ int a[3]; 0[a]=4; a[1]=5; 2[a]=6; a[0]+1[a]+a[2]; }'
 
 echo OK

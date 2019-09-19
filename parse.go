@@ -444,7 +444,13 @@ func unary() *Node {
 		node := unary()
 		return newNodeNum(nodeType(node).size)
 	}
-	return primary()
+
+	node := primary()
+	if consume("[") {
+		node = newNode(ndDeref, newNode(ndAdd, node, expr()), nil)
+		expect("]")
+	}
+	return node
 }
 
 func primary() *Node {
