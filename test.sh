@@ -99,5 +99,7 @@ try   6 'int main(){ int a[3]; a[0]=1; a[1]=2; a[2]=3; a[0]+a[1]+a[2]; }'
 try  15 'int main(){ int a[3]; 0[a]=4; a[1]=5; 2[a]=6; a[0]+1[a]+a[2]; }'
 try   5 'int a; int main(){ a=5; a; }'
 try   4 'int a[3]; int main(){ a[0]=1; a[2]=3; a[0]+a[1]+a[2]; }'
+try   3 'char a[3]; int main(){ a[0]=-1; a[2]=2; int b; b=4; a[0]+b; }'
+try   7 'int add(char a, char b){ a + b; } int main(){ add(-3, 10); }'
 
 echo OK

@@ -4,6 +4,7 @@ type TypeKind int
 
 const (
 	tyInt = iota
+	tyChar
 	tyPtr
 	tyArray
 )
@@ -16,6 +17,7 @@ type Type struct {
 }
 
 var typeInt = &Type{kind: tyInt, size: 4}
+var typeChar = &Type{kind: tyChar, size: 1}
 
 func typePtrTo(ptrTo *Type) *Type {
 	return &Type{
@@ -518,8 +520,19 @@ func primary() *Node {
 }
 
 func typ() *Type {
-	expect("int")
-	typ := typeInt
+	token := expectKind(tkReserved)
+	var typ *Type
+	if token != nil {
+		switch string(token.str) {
+		case "int":
+			typ = typeInt
+		case "char":
+			typ = typeChar
+		}
+	}
+	if typ == nil {
+		fatal("Expect type name but \"%s\" is unknown type name", string(token.str))
+	}
 	for consume("*") {
 		typ = typePtrTo(typ)
 	}
@@ -527,5 +540,5 @@ func typ() *Type {
 }
 
 func peekTyp() bool {
-	return peek("int")
+	return peek("int") || peek("char")
 }

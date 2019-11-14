@@ -2,6 +2,7 @@ package main
 
 import "fmt"
 
+var argRegs8 = []string{"dil", "sil", "dl", "cl", "r8b", "r9b"}
 var argRegs32 = []string{"edi", "esi", "edx", "ecx", "r8d", "r9d"}
 var argRegs64 = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 var labelSeq = 0
@@ -224,23 +225,28 @@ func gen(node *Node) {
 }
 
 func genLoadArg(index int, param *Var) {
+	var argRegs []string
 	switch param.typ.size {
+	case 1:
+		argRegs = argRegs8
 	case 4:
-		fmt.Printf("  mov rax, rbp\n")
-		fmt.Printf("  sub rax, %d\n", param.offset)
-		fmt.Printf("  mov dword ptr [rax], %s\n", argRegs32[index])
+		argRegs = argRegs32
 	case 8:
-		fmt.Printf("  mov rax, rbp\n")
-		fmt.Printf("  sub rax, %d\n", param.offset)
-		fmt.Printf("  mov [rax], %s\n", argRegs64[index])
+		argRegs = argRegs64
 	default:
 		fatal("Loading %d byte argument is not supported: %+v", param.typ.size, param)
 	}
+
+	fmt.Printf("  mov rax, rbp\n")
+	fmt.Printf("  sub rax, %d\n", param.offset)
+	fmt.Printf("  mov [rax], %s\n", argRegs[index])
 }
 
 func genLoad(typ *Type) {
 	fmt.Printf("  pop rax\n")
 	switch typ.size {
+	case 1:
+		fmt.Printf("  movsx rax, byte ptr [rax]\n")
 	case 4:
 		fmt.Printf("  mov eax, dword ptr [rax]\n")
 	case 8:
@@ -255,8 +261,10 @@ func genStore(typ *Type) {
 	fmt.Printf("  pop rdi\n")
 	fmt.Printf("  pop rax\n")
 	switch typ.size {
+	case 1:
+		fmt.Printf("  mov [rax], dil\n")
 	case 4:
-		fmt.Printf("  mov dword ptr [rax], edi\n")
+		fmt.Printf("  mov [rax], edi\n")
 	case 8:
 		fmt.Printf("  mov [rax], rdi\n")
 	default:
