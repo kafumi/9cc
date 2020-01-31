@@ -96,6 +96,31 @@ func newEnv() *Env {
 	return env
 }
 
+type DataSeq int
+
+type GlobalData struct {
+	strings map[string]DataSeq
+	nextSeq DataSeq
+}
+
+var globalData *GlobalData
+
+func newGlobalData() *GlobalData {
+	return &GlobalData {
+		strings: make(map[string]DataSeq)
+	}
+}
+
+func newString(val string) DataSeq {
+	if seq, ok := globalData.strings[val]; ok {
+		return seq
+	} else {
+		seq := globalData.nextSeq
+		globalData.strings[val] = seq
+		globalData.nextSeq = seq + 1
+	}
+}
+
 type Function struct {
 	name   []rune
 	env    *Env
@@ -125,6 +150,7 @@ const (
 	ndFcall         // Function call
 	ndVar           // Variable
 	ndNum           // Integer
+	ndString        // String
 	ndNull          // Null statement
 )
 
@@ -153,6 +179,9 @@ type Node struct {
 
 	// Number literal
 	val int
+
+	// String literal
+	seq DataSeq
 }
 
 var nullNode = &Node{
@@ -227,6 +256,13 @@ func newNodeNum(val int) *Node {
 	}
 }
 
+func newNodeString(val string) *Node {
+	seq := newString(val)
+	return &Node {
+		seq: seq,
+	}
+}
+
 func nodeType(node *Node) *Type {
 	switch node.kind {
 	case ndEq, ndNe, ndLt, ndLe, ndMul, ndDiv, ndAssign, ndNum:
@@ -267,6 +303,8 @@ func nodeType(node *Node) *Type {
 		return typeInt
 	case ndVar:
 		return node.vble.typ
+	case ndString:
+		return typePtrTo(typeChar)
 	default:
 		fatal("Node %+v don't have type", node)
 		return nil
@@ -514,6 +552,11 @@ func primary() *Node {
 			return newNodeFcall(token.str, args)
 		}
 		return newNodeVar(token.str)
+	}
+
+	token = consumeKind(tkString)
+	if token != nil {
+		
 	}
 
 	return newNodeNum(expectNumber())

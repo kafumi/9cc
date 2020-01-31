@@ -14,6 +14,7 @@ const (
 	tkReserved TokenKind = iota // Reserved word or symbol
 	tkIdent                     // Identifier
 	tkNum                       // Integer
+	tkString                    // String
 	tkEOF                       // End of input
 )
 
@@ -138,6 +139,14 @@ func tokenize(p []rune) *Token {
 			continue
 		}
 
+		// String
+		l = isString(p, pos)
+		if l > 0 {
+			cur = newToken(tkString, cur, p[pos:pos+l], pos)
+			pos += l
+			continue
+		}
+
 		fatalAt(pos, "Unable to tokenize")
 	}
 
@@ -211,6 +220,22 @@ func isNumber(p []rune, pos int) int {
 		end++
 	}
 	return end - pos
+}
+
+func isString(p []rune, pos int) int {
+	if p[pos] != '"' {
+		return 0
+	}
+
+	end := pos + 1
+	for end < len(p) {
+		if p[end] == '"' {
+			return end - pos
+		}
+		end++
+	}
+
+	fatalAt(end, "No string listeral terminator")
 }
 
 func isTokenFirstChar(r rune) bool {

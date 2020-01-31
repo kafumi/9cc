@@ -27,6 +27,7 @@ unary      = "+"? primary
            | "sizeof" unary
            | primary "[" expr "]"
 primary    = num
+           | '"' , { ch } , '"'
            | ident ("(" (expr ("," expr)*)? ")")?
            | "(" expr ")"
 typ        = ("int" | "char") "*"*
